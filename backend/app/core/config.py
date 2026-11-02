@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +17,23 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite:///./agentpass.db"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str | None) -> str:
+        """
+        Normalize Render / Heroku postgres:// URLs to SQLAlchemy 2.0 + psycopg 3 driver format.
+        """
+        if not v:
+            return "sqlite:///./agentpass.db"
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+psycopg://", 1)
+        if v.startswith("postgresql://") and not v.startswith("postgresql+"):
+            return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
+
+    # CORS Allowed Origins
+    CORS_ORIGINS: list[str] = ["*"]
 
     # AI Intelligence Providers
     OPENAI_API_KEY: str | None = None
