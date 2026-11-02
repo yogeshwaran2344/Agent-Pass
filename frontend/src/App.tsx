@@ -15,6 +15,7 @@ import { SecurityCenterPage } from './pages/SecurityCenterPage';
 import { AuditLogsPage } from './pages/AuditLogsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 export const App: React.FC = () => {
   return (
@@ -26,7 +27,13 @@ export const App: React.FC = () => {
         <Route path="/register" element={<RegisterPage />} />
 
         {/* Protected Dashboard Layout Routes */}
-        <Route element={<DashboardLayout />}>
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/permissions" element={<PermissionsPage />} />
