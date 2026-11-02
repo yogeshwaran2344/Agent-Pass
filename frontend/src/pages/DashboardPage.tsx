@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Bot,
   CheckCircle2,
@@ -6,43 +6,88 @@ import {
   CreditCard,
   AlertTriangle,
   ArrowUpRight,
-  TrendingUp,
   BrainCircuit,
   ShieldAlert,
   Sparkles,
-  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { Link } from 'react-router-dom';
+import { dashboardService, DashboardStats } from '../services/dashboardService';
+import { intentService } from '../services/intentService';
 
 export const DashboardPage: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Live Intent simulation state
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<any>(null);
 
-  // Quick simulation trigger for the college laptop demo
+  const fetchDashboardStats = async () => {
+    setIsLoading(true);
+    try {
+      const data = await dashboardService.getStats();
+      setStats(data);
+    } catch (err) {
+      console.error('Failed to load dashboard statistics', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
   const runIntentSimulation = async () => {
     setIsSimulating(true);
-    setSimulationResult(null);
-
-    // Simulate intent consistency evaluation
-    setTimeout(() => {
-      setSimulationResult({
-        prompt: "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops.",
-        proposedItem: "Razer Blade 16 Gaming Laptop (RTX 4080)",
-        price: 999.0,
-        budgetLimit: 1000.0,
-        decision: "HARD_CONFLICT",
-        isConsistent: false,
-        score: 0.2,
-        violations: ["Negative constraint violated: 'gaming laptops' detected in item specs"],
-        requiresApproval: true,
+    try {
+      // 1. Create or retrieve intent
+      const intent = await intentService.createIntent({
+        raw_prompt: "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000.",
       });
+
+      // 2. Evaluate purchase proposal through backend Intent Engine
+      const res = await intentService.evaluateIntent({
+        intent_id: intent.id,
+        agent_id: stats?.recent_transactions[0]?.agent_id || 'ag_procurement_99',
+        proposed_item_name: 'Asus ROG Zephyrus 14" RTX 4070 Gaming Laptop',
+        proposed_merchant: 'BestBuy',
+        proposed_price: 999.0,
+        proposed_item_specs: { category: 'Gaming Laptops', gpu: 'RTX 4070' },
+      });
+
+      setSimulationResult({
+        prompt: intent.raw_prompt,
+        proposedItem: 'Asus ROG Zephyrus 14" RTX 4070 Gaming Laptop',
+        price: 999.0,
+        decision: res.decision,
+        isConsistent: res.is_consistent,
+        score: res.consistency_score,
+        violations: res.conflicting_requirements,
+        reasoning: res.reasoning,
+      });
+
+      fetchDashboardStats();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Intent evaluation failed');
+    } finally {
       setIsSimulating(false);
-    }, 1200);
+    }
   };
+
+  if (isLoading && !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        <p className="text-xs text-slate-400">Loading AGENTPASS live governance statistics...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -52,7 +97,7 @@ export const DashboardPage: React.FC = () => {
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Autonomous Intent-Based Financial Governance</span>
+              <span>Connected to FastAPI Backend & Database</span>
             </div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight">
               AGENTPASS Protection Gateway
@@ -79,37 +124,35 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Primary KPI Metric Cards */}
+      {/* Primary KPI Metric Cards (Real backend data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
-          title="Registered AI Agents"
-          value="4 Active"
-          subtitle="All agents operating within limits"
+          title="Total AI Agents"
+          value={`${stats?.total_agents || 0} Registered`}
+          subtitle={`${stats?.active_agents || 0} active, ${stats?.suspended_agents || 0} suspended`}
           icon={Bot}
           accentColor="indigo"
-          trend={{ value: "+1 this week", isPositive: true }}
         />
         <StatCard
           title="Pending Approvals"
-          value="1 Request"
-          subtitle="Context-aware intent mismatch"
+          value={`${stats?.pending_approvals_count || 0} Requests`}
+          subtitle="Human review required"
           icon={CheckCircle2}
           accentColor="amber"
         />
         <StatCard
           title="Reserved Commitments"
-          value="$899.00"
+          value={`$${(stats?.total_reserved_usd || 0).toFixed(2)}`}
           subtitle="2-phase lock preventing double-spend"
           icon={Lock}
           accentColor="sky"
         />
         <StatCard
           title="Settled via PayPal"
-          value="$1,450.00"
-          subtitle="12 transactions authorized"
+          value={`$${(stats?.total_settled_usd || 0).toFixed(2)}`}
+          subtitle="Reconciled transactions"
           icon={CreditCard}
           accentColor="emerald"
-          trend={{ value: "100% policy compliance", isPositive: true }}
         />
       </div>
 
@@ -139,7 +182,7 @@ export const DashboardPage: React.FC = () => {
               User Master Prompt Registered
             </div>
             <div className="font-mono text-sm text-indigo-200 bg-indigo-950/40 p-3 rounded-lg border border-indigo-800/40">
-              "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops."
+              "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000."
             </div>
           </div>
 
@@ -148,7 +191,7 @@ export const DashboardPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="conflict" dot>
-                    INTENT MISMATCH DETECTED
+                    INTENT MISMATCH DETECTED ({simulationResult.decision})
                   </Badge>
                   <span className="text-xs text-rose-300 font-medium">
                     Within Budget, but Violates User Instruction
@@ -167,9 +210,13 @@ export const DashboardPage: React.FC = () => {
                 <div className="p-3 rounded-lg bg-surface/60 border border-surface-border">
                   <span className="text-slate-400 block mb-1">Root Cause of Violation:</span>
                   <span className="font-medium text-rose-400">
-                    {simulationResult.violations[0]}
+                    {simulationResult.violations?.[0] || 'Negative constraint violated'}
                   </span>
                 </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-surface/80 border border-surface-border text-xs text-slate-300 font-mono">
+                {simulationResult.reasoning}
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-rose-500/20">
@@ -189,7 +236,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Two Column Grid: Pending Human Approvals & Live System Activity */}
+      {/* Two Column Grid: Real Pending Human Approvals & Live System Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pending Approval Widget */}
         <Card
@@ -197,36 +244,46 @@ export const DashboardPage: React.FC = () => {
           subtitle="Transactions requiring operator authorization"
           action={
             <Link to="/approvals" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
-              View All <ArrowUpRight className="w-3.5 h-3.5" />
+              View All ({stats?.pending_approvals_count || 0}) <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           }
         >
           <div className="space-y-3">
-            <div className="p-4 rounded-xl border border-amber-500/30 bg-surface-hover/60 hover:border-amber-500/50 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="warning" dot>Pending Review</Badge>
-                  <span className="text-xs font-semibold text-slate-300">ProcurementBot-Alpha</span>
+            {stats?.pending_approvals && stats.pending_approvals.length > 0 ? (
+              stats.pending_approvals.map((req) => (
+                <div
+                  key={req.id}
+                  className="p-4 rounded-xl border border-amber-500/30 bg-surface-hover/60 hover:border-amber-500/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="warning" dot>Pending Review</Badge>
+                      <span className="text-xs font-semibold text-slate-300 font-mono">{req.agent_id}</span>
+                    </div>
+                    <span className="text-sm font-bold text-white font-mono">${req.amount.toFixed(2)} USD</span>
+                  </div>
+
+                  <div className="text-sm font-medium text-white mb-1">
+                    {req.item_description}
+                  </div>
+
+                  <div className="text-xs text-slate-400 mb-3 line-clamp-2">
+                    {req.reason_for_approval}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-surface-border/60">
+                    <span className="text-[11px] text-slate-500">Merchant: {req.merchant_name} · PayPal Sandbox</span>
+                    <Link to="/approvals">
+                      <Button size="sm" variant="paypal">Review Request</Button>
+                    </Link>
+                  </div>
                 </div>
-                <span className="text-sm font-bold text-white font-mono">$899.00 USD</span>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-surface-border rounded-xl">
+                No pending approval requests. All transactions compliant.
               </div>
-
-              <div className="text-sm font-medium text-white mb-1">
-                Asus ROG Zephyrus 14" Portable Gaming
-              </div>
-
-              <div className="text-xs text-slate-400 mb-3 line-clamp-2">
-                Reason: Transaction satisfies budget ceiling ($1,000), but triggers negative constraint "no gaming laptops" from master prompt.
-              </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-surface-border/60">
-                <span className="text-[11px] text-slate-500">Merchant: BestBuy · PayPal Sandbox</span>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="secondary">Reject</Button>
-                  <Button size="sm" variant="primary">Approve</Button>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
 
@@ -241,42 +298,28 @@ export const DashboardPage: React.FC = () => {
           }
         >
           <div className="space-y-3">
-            {[
-              {
-                time: 'Just now',
-                action: 'INTENT_CONSISTENCY_EVALUATED',
-                detail: 'Flagged gaming hardware mismatch against prompt #int_8f32',
-                badge: 'drift',
-              },
-              {
-                time: '12 min ago',
-                action: 'BUDGET_RESERVATION_PLACED',
-                detail: 'Held $899.00 on agent ag_8417 (Hold expires in 15m)',
-                badge: 'info',
-              },
-              {
-                time: '1 hour ago',
-                action: 'PAYPAL_ORDER_CAPTURED',
-                detail: 'Captured order PAYPAL-MOCK-ORDER-A7F9 for $45.00 at GitHub',
-                badge: 'success',
-              },
-              {
-                time: '3 hours ago',
-                action: 'AGENT_CREDENTIAL_ISSUED',
-                detail: 'Issued live API key agp_live_9f8... for ProcurementBot',
-                badge: 'purple',
-              },
-            ].map((event, idx) => (
-              <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-surface/50 border border-surface-border/50 text-xs">
-                <div className="mt-0.5">
-                  <Badge variant={event.badge as any}>{event.action}</Badge>
+            {stats?.recent_audit_events && stats.recent_audit_events.length > 0 ? (
+              stats.recent_audit_events.map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-surface/50 border border-surface-border/50 text-xs"
+                >
+                  <div className="mt-0.5">
+                    <Badge variant="purple">{event.action}</Badge>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-slate-200 truncate">{event.description || event.action}</p>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {event.created_at ? new Date(event.created_at).toLocaleTimeString() : 'Recent'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-slate-200 truncate">{event.detail}</p>
-                  <span className="text-[10px] text-slate-500">{event.time}</span>
-                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-surface-border rounded-xl">
+                No security audit logs recorded yet.
               </div>
-            ))}
+            )}
           </div>
         </Card>
       </div>

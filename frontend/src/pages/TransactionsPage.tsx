@@ -1,41 +1,27 @@
-import React from 'react';
-import { CreditCard, ExternalLink, CheckCircle2, Clock, Lock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CreditCard, ExternalLink, CheckCircle2, Clock, Lock, Loader2 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
+import { Transaction } from '../types';
+import { transactionService } from '../services';
 
 export const TransactionsPage: React.FC = () => {
-  const transactions = [
-    {
-      id: 'tx_7819_live',
-      agent: 'ProcurementBot-Alpha',
-      merchant: 'BestBuy',
-      amount: 899.0,
-      status: 'completed',
-      type: 'PayPal Capture',
-      paypal_order: 'PAYPAL-MOCK-ORDER-9B12',
-      time: '15 min ago',
-    },
-    {
-      id: 'comm_reserve_33',
-      agent: 'FlightBooker-Delta',
-      merchant: 'United Airlines',
-      amount: 240.0,
-      status: 'reserved',
-      type: 'Pre-Allocation Hold',
-      paypal_order: 'Pending Hold',
-      time: '1 hour ago',
-    },
-    {
-      id: 'tx_6612_settled',
-      agent: 'ResearchAssistant',
-      merchant: 'GitHub',
-      amount: 45.0,
-      status: 'completed',
-      type: 'PayPal Capture',
-      paypal_order: 'PAYPAL-MOCK-ORDER-A7F9',
-      time: 'Yesterday',
-    },
-  ];
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTxs = async () => {
+      try {
+        const data = await transactionService.listTransactions();
+        setTransactions(data);
+      } catch (err) {
+        console.error('Failed to load transactions', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTxs();
+  }, []);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -68,18 +54,27 @@ export const TransactionsPage: React.FC = () => {
               {transactions.map((tx) => (
                 <tr key={tx.id} className="hover:bg-white/5 transition-colors">
                   <td className="py-3 px-4 font-mono font-medium text-slate-200">{tx.id}</td>
-                  <td className="py-3 px-4 font-medium text-indigo-300">{tx.agent}</td>
+                  <td className="py-3 px-4 font-medium text-indigo-300 font-mono">{tx.agent_id}</td>
                   <td className="py-3 px-4 text-white font-semibold">{tx.merchant}</td>
                   <td className="py-3 px-4 font-mono font-bold text-white">${tx.amount.toFixed(2)}</td>
                   <td className="py-3 px-4">
-                    <Badge variant={tx.status === 'completed' ? 'success' : 'warning'} dot>
+                    <Badge variant={tx.status === 'completed' ? 'success' : tx.status === 'authorized' ? 'info' : 'warning'} dot>
                       {tx.status.toUpperCase()}
                     </Badge>
                   </td>
-                  <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">{tx.paypal_order}</td>
-                  <td className="py-3 px-4 text-slate-500 text-[11px]">{tx.time}</td>
+                  <td className="py-3 px-4 font-mono text-slate-400 text-[11px]">{tx.payment_method}</td>
+                  <td className="py-3 px-4 text-slate-500 text-[11px]">
+                    {tx.created_at ? new Date(tx.created_at).toLocaleTimeString() : 'Recent'}
+                  </td>
                 </tr>
               ))}
+              {transactions.length === 0 && !isLoading && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-500">
+                    No transactions recorded yet in database.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

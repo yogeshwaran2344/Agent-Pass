@@ -13,7 +13,7 @@ import {
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
-import api from '../services/api';
+import { emergencyService } from '../services';
 
 export const SecurityCenterPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,10 +29,10 @@ export const SecurityCenterPage: React.FC = () => {
 
   const fetchStatus = async () => {
     try {
-      const res = await api.get('/emergency/status');
-      setStatus(res.data);
-    } catch {
-      // Mock status if offline
+      const data = await emergencyService.getStatus();
+      setStatus(data);
+    } catch (err) {
+      console.error('Failed to load emergency status', err);
     }
   };
 
@@ -43,7 +43,7 @@ export const SecurityCenterPage: React.FC = () => {
   const handleTriggerKillSwitch = async () => {
     setIsTriggering(true);
     try {
-      await api.post('/emergency/kill-switch', {
+      await emergencyService.triggerKillSwitch({
         scope: killScope,
         reason: killReason,
       });

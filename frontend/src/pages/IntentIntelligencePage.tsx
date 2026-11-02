@@ -14,7 +14,7 @@ import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { UserIntent, IntentEvaluation } from '../types';
-import api from '../services/api';
+import { intentService } from '../services';
 
 export const IntentIntelligencePage: React.FC = () => {
   const [intents, setIntents] = useState<UserIntent[]>([]);
@@ -33,26 +33,13 @@ export const IntentIntelligencePage: React.FC = () => {
   // Load existing user intents
   const fetchIntents = async () => {
     try {
-      const res = await api.get('/intents/');
-      setIntents(res.data);
-      if (res.data.length > 0 && !selectedIntent) {
-        setSelectedIntent(res.data[0]);
+      const data = await intentService.listIntents();
+      setIntents(data);
+      if (data.length > 0 && !selectedIntent) {
+        setSelectedIntent(data[0]);
       }
-    } catch {
-      // Mock default for interactive UI
-      const mock = {
-        id: 'int_college_laptop',
-        user_id: 'usr_1',
-        raw_prompt: "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000.",
-        primary_goal: 'Laptop for college with high battery life and portability',
-        positive_constraints: ['battery life', 'portability'],
-        negative_constraints: ['gaming laptops'],
-        max_acceptable_budget: 1000,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      setIntents([mock]);
-      setSelectedIntent(mock);
+    } catch (err) {
+      console.error('Failed to load user intents', err);
     }
   };
 
@@ -62,9 +49,9 @@ export const IntentIntelligencePage: React.FC = () => {
 
   const handleRegisterPrompt = async () => {
     try {
-      const res = await api.post('/intents/', { raw_prompt: rawPrompt });
+      const data = await intentService.createIntent({ raw_prompt: rawPrompt });
       fetchIntents();
-      setSelectedIntent(res.data);
+      setSelectedIntent(data);
       alert('Master User Instruction registered in AGENTPASS intent memory!');
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Failed to register intent');
@@ -75,7 +62,7 @@ export const IntentIntelligencePage: React.FC = () => {
     if (!selectedIntent) return;
     setIsEvaluating(true);
     try {
-      const res = await api.post('/intents/evaluate', {
+      const data = await intentService.evaluateIntent({
         intent_id: selectedIntent.id,
         agent_id: 'ag_procurement_99',
         proposed_item_name: itemName,
@@ -83,24 +70,9 @@ export const IntentIntelligencePage: React.FC = () => {
         proposed_price: parseFloat(price) || 0,
         proposed_item_specs: { category: 'Gaming Laptops', gpu: 'RTX 4070' },
       });
-      setEvaluation(res.data);
-    } catch {
-      // Fallback local evaluation if backend test server isn't running
-      const isGaming = itemName.toLowerCase().includes('gaming');
-      const conflicts = isGaming
-        ? ["Proposed item violates negative constraint: 'gaming laptops' (detected term: 'gaming')"]
-        : [];
-      setEvaluation({
-        evaluation_id: 'eval_mock_1',
-        intent_id: selectedIntent.id,
-        consistency_score: isGaming ? 0.2 : 0.95,
-        is_consistent: !isGaming,
-        decision: isGaming ? 'HARD_CONFLICT' : 'MATCH',
-        conflicting_requirements: conflicts,
-        reasoning: isGaming
-          ? `Intent Mismatch Detected. The user's original instruction was: "${selectedIntent.raw_prompt}". The proposed purchase "${itemName}" directly conflicts with negative constraint: no gaming laptops.`
-          : `Proposed purchase "${itemName}" is consistent with user instruction. No negative constraint violations detected.`,
-      });
+      setEvaluation(data);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Evaluation failed');
     } finally {
       setIsEvaluating(false);
     }
