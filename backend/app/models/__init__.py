@@ -9,11 +9,12 @@ from app.models.notification import Notification
 from app.models.permission import AgentPermission
 from app.models.risk import RiskAssessment
 from app.models.transaction import PayPalOrder, Transaction
-from app.models.user import User
+from app.models.user import RevokedToken, User
 
 __all__ = [
     "Base",
     "User",
+    "RevokedToken",
     "Agent",
     "AgentStatusHistory",
     "AgentPermission",

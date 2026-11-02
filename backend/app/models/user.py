@@ -12,9 +12,21 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    full_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Role-based access control (RBAC): admin, agent_operator, auditor, user
+    role: Mapped[str] = mapped_column(String(50), default="agent_operator", nullable=False)
+
+    # Account lifecycle & security
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Verification & password reset tokens
+    verification_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    reset_password_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    reset_password_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
@@ -24,3 +36,14 @@ class User(Base):
     agents = relationship("Agent", back_populates="owner", cascade="all, delete-orphan")
     intents = relationship("UserIntent", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    token_jti: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    token_type: Mapped[str] = mapped_column(String(20), default="access")  # access or refresh
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    revoked_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

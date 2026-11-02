@@ -1,10 +1,10 @@
 import uuid
-import pytest
-from app.models.user import User
+
 from app.models.agent import Agent
 from app.models.permission import AgentPermission
-from app.services.policy_engine import PolicyEngine
+from app.models.user import User
 from app.services.emergency_engine import EmergencyKillSwitch
+from app.services.policy_engine import PolicyEngine
 
 
 def test_deterministic_policy_and_kill_switch(db_session):

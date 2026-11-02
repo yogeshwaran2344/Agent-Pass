@@ -1,8 +1,8 @@
 import uuid
-import pytest
-from app.models.user import User
+
 from app.models.agent import Agent
 from app.models.intent import UserIntent
+from app.models.user import User
 from app.services.intent_engine import IntentConsistencyEngine
 
 
