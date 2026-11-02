@@ -16,7 +16,9 @@ class AgentBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     description: str | None = None
     agent_type: str = Field(default="autonomous_buyer")
-    framework: str | None = Field(default="custom", description="langchain, crewai, autogen, custom")
+    framework: str | None = Field(
+        default="custom", description="langchain, crewai, autogen, custom"
+    )
     model_name: str | None = Field(default="gemini-2.0-flash")
     metadata_json: dict = Field(default_factory=dict)
 
@@ -80,4 +82,6 @@ class AgentResponse(AgentBase):
 class AgentRegistrationResponse(BaseModel):
     agent: AgentResponse
     api_key: str
-    message: str = "Agent registered successfully. Store the API key safely; it cannot be shown again."
+    message: str = (
+        "Agent registered successfully. Store the API key safely; it cannot be shown again."
+    )

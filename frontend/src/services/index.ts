@@ -8,4 +8,7 @@ export * from './transactionService';
 export * from './emergencyService';
 export * from './dashboardService';
 export * from './auditService';
+export * from './delegationService';
+export * from './notificationService';
+export * from './riskService';
 export { default as api } from './api';

@@ -17,10 +17,12 @@ router = APIRouter(prefix="/intents", tags=["Intent Consistency Engine"])
 
 
 @router.post("/", response_model=IntentRead, status_code=status.HTTP_201_CREATED)
-def create_user_intent(intent_in: IntentCreate, user_id: str = "master_user", db: Session = Depends(get_db)):
+def create_user_intent(
+    intent_in: IntentCreate, user_id: str = "master_user", db: Session = Depends(get_db)
+):
     # Auto-extract structured constraints if not explicitly passed
     extracted = IntentConsistencyEngine.extract_intent_structure(intent_in.raw_prompt)
-    
+
     intent = UserIntent(
         id=str(uuid.uuid4()),
         user_id=user_id,
@@ -30,7 +32,7 @@ def create_user_intent(intent_in: IntentCreate, user_id: str = "master_user", db
         positive_constraints=intent_in.positive_constraints or extracted["positive_constraints"],
         negative_constraints=intent_in.negative_constraints or extracted["negative_constraints"],
         max_acceptable_budget=intent_in.max_acceptable_budget or extracted["max_acceptable_budget"],
-        is_active=True
+        is_active=True,
     )
     db.add(intent)
     db.commit()
@@ -53,7 +55,7 @@ def evaluate_intent(req: IntentEvaluateRequest, db: Session = Depends(get_db)):
             proposed_item_name=req.proposed_item_name,
             proposed_merchant=req.proposed_merchant,
             proposed_price=req.proposed_price,
-            proposed_item_specs=req.proposed_item_specs
+            proposed_item_specs=req.proposed_item_specs,
         )
         return IntentEvaluateResponse(
             evaluation_id=evaluation.id,
@@ -62,7 +64,7 @@ def evaluate_intent(req: IntentEvaluateRequest, db: Session = Depends(get_db)):
             is_consistent=evaluation.is_consistent,
             decision=evaluation.decision,
             conflicting_requirements=evaluation.conflicting_requirements,
-            reasoning=evaluation.reasoning
+            reasoning=evaluation.reasoning,
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -81,7 +81,9 @@ def login_json(req: UserLoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login/access-token", response_model=TokenResponse)
-def login_oauth2_form(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_oauth2_form(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     """OAuth2 compatible login endpoint."""
     return login_json(UserLoginRequest(email=form_data.username, password=form_data.password), db)
 
@@ -90,13 +92,17 @@ def login_oauth2_form(form_data: OAuth2PasswordRequestForm = Depends(), db: Sess
 def logout(
     token: str = Depends(oauth2_scheme),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """3. Secure logout with immediate token revocation."""
     payload = decode_token(token)
     jti = payload.get("jti")
     exp_ts = payload.get("exp")
-    expires_at = datetime.fromtimestamp(exp_ts, tz=timezone.utc) if exp_ts else datetime.now(timezone.utc) + timedelta(hours=24)
+    expires_at = (
+        datetime.fromtimestamp(exp_ts, tz=timezone.utc)
+        if exp_ts
+        else datetime.now(timezone.utc) + timedelta(hours=24)
+    )
 
     if jti:
         revoked = RevokedToken(
@@ -141,15 +147,21 @@ def refresh_token(req: TokenRefreshRequest, db: Session = Depends(get_db)):
 
     # Invalidate previous refresh token
     exp_ts = payload.get("exp")
-    expires_at = datetime.fromtimestamp(exp_ts, tz=timezone.utc) if exp_ts else datetime.now(timezone.utc) + timedelta(days=7)
+    expires_at = (
+        datetime.fromtimestamp(exp_ts, tz=timezone.utc)
+        if exp_ts
+        else datetime.now(timezone.utc) + timedelta(days=7)
+    )
     if jti:
-        db.add(RevokedToken(
-            id=str(uuid.uuid4()),
-            token_jti=jti,
-            token_type="refresh",
-            user_id=user.id,
-            expires_at=expires_at,
-        ))
+        db.add(
+            RevokedToken(
+                id=str(uuid.uuid4()),
+                token_jti=jti,
+                token_type="refresh",
+                user_id=user.id,
+                expires_at=expires_at,
+            )
+        )
         db.commit()
 
     token_data = create_token_pair(subject=user.id, role=user.role)
@@ -187,7 +199,9 @@ def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
             detail=f"DEBUG_TOKEN:{reset_token}" if settings.DEBUG else None,
         )
 
-    return MessageResponse(message="If this email is registered, a password reset token has been issued.")
+    return MessageResponse(
+        message="If this email is registered, a password reset token has been issued."
+    )
 
 
 @router.post("/reset-password", response_model=MessageResponse)
@@ -217,4 +231,6 @@ def reset_password(req: ResetPasswordConfirmRequest, db: Session = Depends(get_d
     user.reset_password_expires_at = None
     db.commit()
 
-    return MessageResponse(message="Password reset successfully. You can now login with your new password.")
+    return MessageResponse(
+        message="Password reset successfully. You can now login with your new password."
+    )

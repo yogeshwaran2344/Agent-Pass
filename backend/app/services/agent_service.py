@@ -74,15 +74,17 @@ class AgentRegistryService:
             AgentCapabilitySchema(capability_name="ecommerce:purchase", scope="financial"),
         ]
         for cap in capabilities_to_add:
-            db.add(AgentCapability(
-                id=str(uuid.uuid4()),
-                agent_id=agent_id,
-                capability_name=cap.capability_name,
-                scope=cap.scope,
-                description=cap.description,
-                is_enabled=cap.is_enabled,
-                created_at=now,
-            ))
+            db.add(
+                AgentCapability(
+                    id=str(uuid.uuid4()),
+                    agent_id=agent_id,
+                    capability_name=cap.capability_name,
+                    scope=cap.scope,
+                    description=cap.description,
+                    is_enabled=cap.is_enabled,
+                    created_at=now,
+                )
+            )
 
         # 4. Initialize Reputation profile
         reputation = AgentReputation(
@@ -100,27 +102,31 @@ class AgentRegistryService:
         db.add(reputation)
 
         # 5. Record initial status history & Audit Log
-        db.add(AgentStatusHistory(
-            id=str(uuid.uuid4()),
-            agent_id=agent_id,
-            previous_status=None,
-            new_status="active",
-            reason="Agent registration",
-            changed_by_user_id=owner_id,
-            created_at=now,
-        ))
+        db.add(
+            AgentStatusHistory(
+                id=str(uuid.uuid4()),
+                agent_id=agent_id,
+                previous_status=None,
+                new_status="active",
+                reason="Agent registration",
+                changed_by_user_id=owner_id,
+                created_at=now,
+            )
+        )
 
-        db.add(AuditLog(
-            id=str(uuid.uuid4()),
-            entity_type="AGENT",
-            entity_id=agent_id,
-            actor_type="USER",
-            actor_id=owner_id,
-            action="AGENT_REGISTERED",
-            description=f"Agent '{agent_in.name}' registered with capabilities: {[c.capability_name for c in capabilities_to_add]}",
-            payload_snapshot={"framework": agent_in.framework, "model": agent_in.model_name},
-            created_at=now,
-        ))
+        db.add(
+            AuditLog(
+                id=str(uuid.uuid4()),
+                entity_type="AGENT",
+                entity_id=agent_id,
+                actor_type="USER",
+                actor_id=owner_id,
+                action="AGENT_REGISTERED",
+                description=f"Agent '{agent_in.name}' registered with capabilities: {[c.capability_name for c in capabilities_to_add]}",
+                payload_snapshot={"framework": agent_in.framework, "model": agent_in.model_name},
+                created_at=now,
+            )
+        )
 
         db.commit()
         db.refresh(agent)
@@ -138,10 +144,14 @@ class AgentRegistryService:
             )
 
         key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
-        credential = db.query(AgentCredential).filter(
-            AgentCredential.key_hash == key_hash,
-            AgentCredential.is_active == True,
-        ).first()
+        credential = (
+            db.query(AgentCredential)
+            .filter(
+                AgentCredential.key_hash == key_hash,
+                AgentCredential.is_active == True,
+            )
+            .first()
+        )
 
         if not credential:
             raise HTTPException(
@@ -176,11 +186,7 @@ class AgentRegistryService:
 
     @staticmethod
     def update_agent_status(
-        db: Session,
-        agent_id: str,
-        new_status: str,
-        reason: str,
-        actor_id: str
+        db: Session, agent_id: str, new_status: str, reason: str, actor_id: str
     ) -> Agent:
         """Transition agent lifecycle status with audit recording."""
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
@@ -204,27 +210,35 @@ class AgentRegistryService:
         now = datetime.now(timezone.utc)
         agent.updated_at = now
 
-        db.add(AgentStatusHistory(
-            id=str(uuid.uuid4()),
-            agent_id=agent.id,
-            previous_status=prev_status,
-            new_status=new_status,
-            reason=reason,
-            changed_by_user_id=actor_id,
-            created_at=now,
-        ))
+        db.add(
+            AgentStatusHistory(
+                id=str(uuid.uuid4()),
+                agent_id=agent.id,
+                previous_status=prev_status,
+                new_status=new_status,
+                reason=reason,
+                changed_by_user_id=actor_id,
+                created_at=now,
+            )
+        )
 
-        db.add(AuditLog(
-            id=str(uuid.uuid4()),
-            entity_type="AGENT",
-            entity_id=agent.id,
-            actor_type="USER",
-            actor_id=actor_id,
-            action=f"AGENT_STATUS_CHANGED_{new_status.upper()}",
-            description=f"Status changed from {prev_status} to {new_status}. Reason: {reason}",
-            payload_snapshot={"previous_status": prev_status, "new_status": new_status, "reason": reason},
-            created_at=now,
-        ))
+        db.add(
+            AuditLog(
+                id=str(uuid.uuid4()),
+                entity_type="AGENT",
+                entity_id=agent.id,
+                actor_type="USER",
+                actor_id=actor_id,
+                action=f"AGENT_STATUS_CHANGED_{new_status.upper()}",
+                description=f"Status changed from {prev_status} to {new_status}. Reason: {reason}",
+                payload_snapshot={
+                    "previous_status": prev_status,
+                    "new_status": new_status,
+                    "reason": reason,
+                },
+                created_at=now,
+            )
+        )
 
         db.commit()
         db.refresh(agent)
@@ -232,19 +246,21 @@ class AgentRegistryService:
 
     @staticmethod
     def add_capability(
-        db: Session,
-        agent_id: str,
-        cap_in: AgentCapabilitySchema
+        db: Session, agent_id: str, cap_in: AgentCapabilitySchema
     ) -> AgentCapability:
         """Register a new declared capability for the agent."""
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
 
-        existing = db.query(AgentCapability).filter(
-            AgentCapability.agent_id == agent_id,
-            AgentCapability.capability_name == cap_in.capability_name,
-        ).first()
+        existing = (
+            db.query(AgentCapability)
+            .filter(
+                AgentCapability.agent_id == agent_id,
+                AgentCapability.capability_name == cap_in.capability_name,
+            )
+            .first()
+        )
 
         if existing:
             existing.is_enabled = cap_in.is_enabled

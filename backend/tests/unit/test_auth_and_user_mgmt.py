@@ -22,7 +22,9 @@ def test_module_1_complete_auth_and_user_management(client, db_session):
     assert res_dup.status_code == 400
 
     # 3. Email verification flow
-    created_user = db_session.query(User).filter(User.email == "agent.director@enterprise.ai").first()
+    created_user = (
+        db_session.query(User).filter(User.email == "agent.director@enterprise.ai").first()
+    )
     assert created_user.verification_token is not None
     verif_token = created_user.verification_token
 
@@ -44,10 +46,13 @@ def test_module_1_complete_auth_and_user_management(client, db_session):
     refresh_token = tokens["refresh_token"]
 
     # 5. Invalid password login rejection
-    res_bad_login = client.post("/api/v1/auth/login", json={
-        "email": "agent.director@enterprise.ai",
-        "password": "WrongPassword999!",
-    })
+    res_bad_login = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "agent.director@enterprise.ai",
+            "password": "WrongPassword999!",
+        },
+    )
     assert res_bad_login.status_code == 401
 
     # 6. Authenticated Profile Retrieval (/users/me)
@@ -59,9 +64,7 @@ def test_module_1_complete_auth_and_user_management(client, db_session):
 
     # 7. Profile Update (/users/me)
     res_update = client.patch(
-        "/api/v1/users/me",
-        headers=auth_headers,
-        json={"full_name": "Senior Agent Director"}
+        "/api/v1/users/me", headers=auth_headers, json={"full_name": "Senior Agent Director"}
     )
     assert res_update.status_code == 200
     assert res_update.json()["full_name"] == "Senior Agent Director"
@@ -70,7 +73,7 @@ def test_module_1_complete_auth_and_user_management(client, db_session):
     res_change_pw = client.post(
         "/api/v1/users/me/change-password",
         headers=auth_headers,
-        json={"current_password": "SecurePassword123!", "new_password": "NewSecretPass456!"}
+        json={"current_password": "SecurePassword123!", "new_password": "NewSecretPass456!"},
     )
     assert res_change_pw.status_code == 200
 
@@ -93,68 +96,79 @@ def test_module_1_complete_auth_and_user_management(client, db_session):
     db_session.commit()
 
     # Re-login to get admin token
-    res_admin_login = client.post("/api/v1/auth/login", json={
-        "email": "agent.director@enterprise.ai",
-        "password": "NewSecretPass456!",
-    })
+    res_admin_login = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "agent.director@enterprise.ai",
+            "password": "NewSecretPass456!",
+        },
+    )
     admin_token = res_admin_login.json()["access_token"]
     res_admin_ok = client.get("/api/v1/users/", headers={"Authorization": f"Bearer {admin_token}"})
     assert res_admin_ok.status_code == 200
     assert len(res_admin_ok.json()) >= 1
 
     # 11. Password Reset Flow (Forgot password + Reset)
-    res_forgot = client.post("/api/v1/auth/forgot-password", json={"email": "agent.director@enterprise.ai"})
+    res_forgot = client.post(
+        "/api/v1/auth/forgot-password", json={"email": "agent.director@enterprise.ai"}
+    )
     assert res_forgot.status_code == 200
     db_session.refresh(db_user)
     reset_token = db_user.reset_password_token
     assert reset_token is not None
 
-    res_reset_confirm = client.post("/api/v1/auth/reset-password", json={
-        "token": reset_token,
-        "new_password": "BrandNewPassword789!"
-    })
+    res_reset_confirm = client.post(
+        "/api/v1/auth/reset-password",
+        json={"token": reset_token, "new_password": "BrandNewPassword789!"},
+    )
     assert res_reset_confirm.status_code == 200
 
     # Verify login with reset password
-    res_login_reset = client.post("/api/v1/auth/login", json={
-        "email": "agent.director@enterprise.ai",
-        "password": "BrandNewPassword789!",
-    })
+    res_login_reset = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "agent.director@enterprise.ai",
+            "password": "BrandNewPassword789!",
+        },
+    )
     assert res_login_reset.status_code == 200
     post_reset_token = res_login_reset.json()["access_token"]
 
     # 12. Secure Logout & Token Revocation
     res_logout = client.post(
-        "/api/v1/auth/logout",
-        headers={"Authorization": f"Bearer {post_reset_token}"}
+        "/api/v1/auth/logout", headers={"Authorization": f"Bearer {post_reset_token}"}
     )
     assert res_logout.status_code == 200
 
     # Verify revoked token is immediately rejected
     res_revoked_try = client.get(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {post_reset_token}"}
+        "/api/v1/users/me", headers={"Authorization": f"Bearer {post_reset_token}"}
     )
     assert res_revoked_try.status_code == 401
     assert "revoked" in res_revoked_try.json()["detail"].lower()
 
     # 13. Account Deactivation
     # Login again, deactivate account, and test that deactivated user cannot login
-    res_login_deact = client.post("/api/v1/auth/login", json={
-        "email": "agent.director@enterprise.ai",
-        "password": "BrandNewPassword789!",
-    })
+    res_login_deact = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "agent.director@enterprise.ai",
+            "password": "BrandNewPassword789!",
+        },
+    )
     active_token = res_login_deact.json()["access_token"]
     res_deactivate = client.delete(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {active_token}"}
+        "/api/v1/users/me", headers={"Authorization": f"Bearer {active_token}"}
     )
     assert res_deactivate.status_code == 200
 
     # Login should now fail with 403 Forbidden
-    res_login_after_deact = client.post("/api/v1/auth/login", json={
-        "email": "agent.director@enterprise.ai",
-        "password": "BrandNewPassword789!",
-    })
+    res_login_after_deact = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "agent.director@enterprise.ai",
+            "password": "BrandNewPassword789!",
+        },
+    )
     assert res_login_after_deact.status_code == 403
     assert "deactivated" in res_login_after_deact.json()["detail"].lower()

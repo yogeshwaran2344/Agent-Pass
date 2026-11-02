@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -20,7 +19,7 @@ def reserve_budget(com_in: CommitmentCreate, db: Session = Depends(get_db)):
             merchant=com_in.merchant,
             purpose=com_in.purpose,
             intent_id=com_in.intent_id,
-            hold_minutes=com_in.hold_duration_minutes
+            hold_minutes=com_in.hold_duration_minutes,
         )
         return commitment
     except ValueError as e:

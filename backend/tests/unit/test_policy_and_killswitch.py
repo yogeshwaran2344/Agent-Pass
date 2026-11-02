@@ -22,7 +22,7 @@ def test_deterministic_policy_and_kill_switch(db_session):
         daily_spend_limit=300.0,
         require_human_approval_above=50.0,
         disallowed_merchants=["SuspiciousMerchant"],
-        is_active=True
+        is_active=True,
     )
     db_session.add(policy)
     db_session.commit()
@@ -56,8 +56,10 @@ def test_deterministic_policy_and_kill_switch(db_session):
     assert any("blocked" in v for v in violations)
 
     # 5. Trigger Emergency Kill Switch
-    EmergencyKillSwitch.kill_agent(db=db_session, agent_id=agent.id, reason="Rogue behavior detected")
-    
+    EmergencyKillSwitch.kill_agent(
+        db=db_session, agent_id=agent.id, reason="Rogue behavior detected"
+    )
+
     # 6. Verify subsequent requests are instantly blocked by kill switch
     is_auth, req_appr, reason, violations = PolicyEngine.evaluate_transaction(
         db=db_session, agent_id=agent.id, amount=10.0, merchant="Amazon"

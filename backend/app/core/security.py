@@ -18,8 +18,7 @@ from app.db.database import get_db
 password_hash = PasswordHash((Argon2Hasher(),))
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_PREFIX}/auth/login",
-    auto_error=False
+    tokenUrl=f"{settings.API_V1_PREFIX}/auth/login", auto_error=False
 )
 
 
@@ -92,14 +91,12 @@ def decode_token(token: str) -> dict[str, Any]:
 def is_token_revoked(db: Session, jti: str) -> bool:
     """Check if token JTI has been revoked/blacklisted."""
     from app.models.user import RevokedToken
+
     revoked = db.query(RevokedToken).filter(RevokedToken.token_jti == jti).first()
     return revoked is not None
 
 
-def get_current_user(
-    token: str | None = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-):
+def get_current_user(token: str | None = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     """Retrieve and validate current authenticated user."""
     from app.models.user import User
 
@@ -148,6 +145,7 @@ def get_current_user(
 
 def require_roles(allowed_roles: list[str]) -> Callable:
     """RBAC Guard dependency: verifies current user has one of allowed roles."""
+
     def role_checker(current_user=Depends(get_current_user)):
         if current_user.is_superuser:
             return current_user
@@ -157,4 +155,5 @@ def require_roles(allowed_roles: list[str]) -> Callable:
                 detail=f"Access denied. Requires one of roles: {', '.join(allowed_roles)}",
             )
         return current_user
+
     return role_checker

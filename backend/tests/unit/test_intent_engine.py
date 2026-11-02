@@ -36,7 +36,7 @@ def test_intent_consistency_detects_gaming_laptop_violation(db_session):
         proposed_item_name="Asus ROG Zephyrus Gaming Laptop RTX 4070",
         proposed_merchant="BestBuy",
         proposed_price=899.0,
-        proposed_item_specs={"gpu": "RTX 4070", "category": "Gaming"}
+        proposed_item_specs={"gpu": "RTX 4070", "category": "Gaming"},
     )
 
     assert eval_gaming.is_consistent is False
@@ -51,7 +51,7 @@ def test_intent_consistency_detects_gaming_laptop_violation(db_session):
         proposed_item_name="Apple MacBook Air 13 M3 16GB",
         proposed_merchant="Apple",
         proposed_price=949.0,
-        proposed_item_specs={"battery_hours": 18, "weight": "2.7 lbs"}
+        proposed_item_specs={"battery_hours": 18, "weight": "2.7 lbs"},
     )
 
     assert eval_ultrabook.is_consistent is True

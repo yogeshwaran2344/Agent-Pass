@@ -20,8 +20,7 @@ router = APIRouter(prefix="/permissions", tags=["Policy & Permissions Engine"])
 def create_permission_policy(perm_in: PermissionCreate, db: Session = Depends(get_db)):
     # Deactivate existing active policies for this agent
     db.query(AgentPermission).filter(
-        AgentPermission.agent_id == perm_in.agent_id,
-        AgentPermission.is_active == True
+        AgentPermission.agent_id == perm_in.agent_id, AgentPermission.is_active == True
     ).update({"is_active": False})
 
     permission = AgentPermission(
@@ -36,7 +35,7 @@ def create_permission_policy(perm_in: PermissionCreate, db: Session = Depends(ge
         allowed_categories=perm_in.allowed_categories,
         disallowed_categories=perm_in.disallowed_categories,
         valid_until=perm_in.valid_until,
-        is_active=True
+        is_active=True,
     )
     db.add(permission)
     db.commit()
@@ -56,11 +55,11 @@ def evaluate_transaction_policy(req: PermissionCheckRequest, db: Session = Depen
         agent_id=req.agent_id,
         amount=req.amount,
         merchant=req.merchant,
-        category=req.category or ""
+        category=req.category or "",
     )
     return PermissionCheckResponse(
         is_authorized=is_auth,
         requires_human_approval=req_approval,
         reason=reason,
-        violations=violations
+        violations=violations,
     )

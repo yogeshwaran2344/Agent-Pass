@@ -52,7 +52,7 @@ def evaluate_risk(req: RiskCheckRequest, db: Session = Depends(get_db)):
         overall_risk_score=score,
         risk_level=level,
         triggered_rules=rules_triggered,
-        explanation=f"Evaluated with {len(rules_triggered)} risk signals."
+        explanation=f"Evaluated with {len(rules_triggered)} risk signals.",
     )
     db.add(assessment)
     db.commit()
@@ -61,5 +61,5 @@ def evaluate_risk(req: RiskCheckRequest, db: Session = Depends(get_db)):
         overall_risk_score=score,
         risk_level=level,
         triggered_rules=rules_triggered,
-        explanation=assessment.explanation
+        explanation=assessment.explanation,
     )

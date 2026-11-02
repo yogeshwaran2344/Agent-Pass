@@ -14,7 +14,11 @@ class PayPalSandboxService:
     @staticmethod
     async def get_access_token() -> str:
         """Fetch OAuth2 Bearer token from PayPal Sandbox."""
-        if not settings.PAYPAL_CLIENT_ID or not settings.PAYPAL_CLIENT_SECRET or settings.PAYPAL_CLIENT_ID == "mock_client_id":
+        if (
+            not settings.PAYPAL_CLIENT_ID
+            or not settings.PAYPAL_CLIENT_SECRET
+            or settings.PAYPAL_CLIENT_ID == "mock_client_id"
+        ):
             # Return synthetic test token in mock/dev mode
             return "mock_sandbox_access_token_agentpass"
 
@@ -28,7 +32,7 @@ class PayPalSandboxService:
                 auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
                 data=data,
                 headers=headers,
-                timeout=15.0
+                timeout=15.0,
             )
             res.raise_for_status()
             return res.json().get("access_token")
@@ -38,7 +42,7 @@ class PayPalSandboxService:
         db: Session,
         transaction_id: str,
         return_url: str | None = None,
-        cancel_url: str | None = None
+        cancel_url: str | None = None,
     ) -> dict[str, Any]:
         """
         Create a PayPal Sandbox order.
@@ -50,10 +54,7 @@ class PayPalSandboxService:
 
         # ENFORCE AGENTPASS DETERMINISTIC POLICY FIRST
         is_auth, req_approval, reason, violations = PolicyEngine.evaluate_transaction(
-            db=db,
-            agent_id=tx.agent_id,
-            amount=tx.amount,
-            merchant=tx.merchant
+            db=db, agent_id=tx.agent_id, amount=tx.amount, merchant=tx.merchant
         )
         if not is_auth:
             raise PermissionError(f"AGENTPASS Policy Blocked Order: {reason}")
@@ -101,7 +102,7 @@ class PayPalSandboxService:
             paypal_order_id=paypal_order_id,
             intent="CAPTURE",
             status="CREATED",
-            raw_response=data
+            raw_response=data,
         )
         db.add(pp_order)
         db.commit()
@@ -112,7 +113,9 @@ class PayPalSandboxService:
     @staticmethod
     async def capture_order(db: Session, paypal_order_id: str) -> dict[str, Any]:
         """Captures an approved PayPal order and settles the transaction and commitment."""
-        pp_order = db.query(PayPalOrder).filter(PayPalOrder.paypal_order_id == paypal_order_id).first()
+        pp_order = (
+            db.query(PayPalOrder).filter(PayPalOrder.paypal_order_id == paypal_order_id).first()
+        )
         if not pp_order:
             raise ValueError(f"PayPal order '{paypal_order_id}' not found.")
 
@@ -133,7 +136,12 @@ class PayPalSandboxService:
                 res.raise_for_status()
                 data = res.json()
                 status = data.get("status", "COMPLETED")
-                capture_id = data.get("purchase_units", [{}])[0].get("payments", {}).get("captures", [{}])[0].get("id")
+                capture_id = (
+                    data.get("purchase_units", [{}])[0]
+                    .get("payments", {})
+                    .get("captures", [{}])[0]
+                    .get("id")
+                )
         else:
             status = "COMPLETED"
             capture_id = f"CAPTURE-MOCK-{uuid.uuid4().hex[:8].upper()}"

@@ -11,6 +11,7 @@ class TransactionCreate(BaseModel):
     currency: str = "USD"
     merchant: str
     payment_method: str = "paypal_sandbox"
+    idempotency_key: str | None = None
     metadata_json: dict[str, Any] = {}
 
 
@@ -22,6 +23,7 @@ class TransactionRead(BaseModel):
     currency: str
     merchant: str
     payment_method: str
+    idempotency_key: str | None = None
     status: str
     error_message: str | None = None
     created_at: datetime
@@ -38,3 +40,9 @@ class PayPalOrderCreate(BaseModel):
 
 class PayPalOrderCapture(BaseModel):
     paypal_order_id: str
+
+
+class PayPalWebhookEvent(BaseModel):
+    id: str | None = None
+    event_type: str
+    resource: dict[str, Any] = {}

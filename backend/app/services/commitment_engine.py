@@ -17,7 +17,7 @@ class CommitmentEngine:
         merchant: str,
         purpose: str,
         intent_id: str | None = None,
-        hold_minutes: int = 15
+        hold_minutes: int = 15,
     ) -> Commitment:
         """
         Creates a temporary budget lock/hold (RESERVED) before payment execution.
@@ -27,10 +27,11 @@ class CommitmentEngine:
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         # 1. Fetch agent permission daily limit
-        permission = db.query(AgentPermission).filter(
-            AgentPermission.agent_id == agent_id,
-            AgentPermission.is_active == True
-        ).first()
+        permission = (
+            db.query(AgentPermission)
+            .filter(AgentPermission.agent_id == agent_id, AgentPermission.is_active == True)
+            .first()
+        )
 
         daily_limit = permission.daily_spend_limit if permission else 500.0
 
@@ -41,7 +42,7 @@ class CommitmentEngine:
                 Commitment.agent_id == agent_id,
                 Commitment.reserved_at >= start_of_day,
                 Commitment.status.in_(["reserved", "committed", "settled"]),
-                Commitment.expires_at > now
+                Commitment.expires_at > now,
             )
             .scalar()
         )
@@ -77,7 +78,7 @@ class CommitmentEngine:
         commitment = db.query(Commitment).filter(Commitment.id == commitment_id).first()
         if not commitment:
             raise ValueError(f"Commitment '{commitment_id}' not found.")
-        
+
         commitment.status = "settled"
         commitment.settled_at = datetime.now(timezone.utc)
         db.commit()
@@ -90,7 +91,7 @@ class CommitmentEngine:
         commitment = db.query(Commitment).filter(Commitment.id == commitment_id).first()
         if not commitment:
             raise ValueError(f"Commitment '{commitment_id}' not found.")
-        
+
         commitment.status = "released"
         db.commit()
         db.refresh(commitment)

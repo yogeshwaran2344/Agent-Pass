@@ -27,15 +27,21 @@ class User(Base):
     reset_password_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     reset_password_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # Relationships
     agents = relationship("Agent", back_populates="owner", cascade="all, delete-orphan")
     intents = relationship("UserIntent", back_populates="user", cascade="all, delete-orphan")
-    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    notifications = relationship(
+        "Notification", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class RevokedToken(Base):
@@ -45,5 +51,7 @@ class RevokedToken(Base):
     token_jti: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     token_type: Mapped[str] = mapped_column(String(20), default="access")  # access or refresh
     user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
-    revoked_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    revoked_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(timezone.utc)
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

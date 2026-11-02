@@ -29,8 +29,7 @@ class DashboardStatsResponse(BaseModel):
 
 @router.get("/stats", response_model=DashboardStatsResponse)
 def get_dashboard_stats(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
     """Aggregate live metrics for the user's dashboard."""
     # Agent stats
@@ -44,7 +43,10 @@ def get_dashboard_stats(
     # Pending approvals
     pending_approvals = (
         db.query(ApprovalRequest)
-        .filter(ApprovalRequest.agent_id.in_(agent_ids) if agent_ids else True, ApprovalRequest.status == "pending")
+        .filter(
+            ApprovalRequest.agent_id.in_(agent_ids) if agent_ids else True,
+            ApprovalRequest.status == "pending",
+        )
         .order_by(ApprovalRequest.created_at.desc())
         .limit(5)
         .all()
@@ -53,14 +55,20 @@ def get_dashboard_stats(
     # Commitments reserved
     reserved_sum = (
         db.query(func.coalesce(func.sum(Commitment.amount), 0.0))
-        .filter(Commitment.agent_id.in_(agent_ids) if agent_ids else True, Commitment.status == "reserved")
+        .filter(
+            Commitment.agent_id.in_(agent_ids) if agent_ids else True,
+            Commitment.status == "reserved",
+        )
         .scalar()
     )
 
     # Settled transactions
     settled_sum = (
         db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
-        .filter(Transaction.agent_id.in_(agent_ids) if agent_ids else True, Transaction.status == "completed")
+        .filter(
+            Transaction.agent_id.in_(agent_ids) if agent_ids else True,
+            Transaction.status == "completed",
+        )
         .scalar()
     )
 

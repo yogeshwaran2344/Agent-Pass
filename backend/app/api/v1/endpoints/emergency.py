@@ -1,9 +1,13 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.agent import Agent
 from app.models.approval import ApprovalRequest
+from app.models.notification import Notification
+from app.models.user import User
 from app.schemas.emergency import EmergencyStatus, KillSwitchRequest
 from app.services.emergency_engine import EmergencyKillSwitch
 
@@ -17,14 +21,28 @@ def trigger_kill_switch(req: KillSwitchRequest, db: Session = Depends(get_db)):
         db=db,
         agent_id=req.agent_id or "",
         reason=req.reason,
-        scope=req.scope
+        scope=req.scope,
     )
+
+    # Emit urgent notification to all users/admins
+    first_user = db.query(User).first()
+    user_id = first_user.id if first_user else "system"
+    notif = Notification(
+        id=str(uuid.uuid4()),
+        user_id=user_id,
+        title="EMERGENCY KILL SWITCH TRIGGERED",
+        message=f"Kill switch activated across scope '{req.scope}'. Reason: {req.reason}. {len(affected)} agent(s) terminated.",
+        notification_type="KILL_SWITCH_TRIGGERED",
+    )
+    db.add(notif)
+    db.commit()
+
     return {
         "status": "TRIGGERED",
         "scope": req.scope,
         "reason": req.reason,
         "terminated_agents_count": len(affected),
-        "terminated_agent_ids": affected
+        "terminated_agent_ids": affected,
     }
 
 
@@ -38,5 +56,5 @@ def get_emergency_status(db: Session = Depends(get_db)):
         global_kill_active=False,
         suspended_agents_count=suspended_count,
         revoked_agents_count=killed_count,
-        pending_approvals_count=pending_appr
+        pending_approvals_count=pending_appr,
     )

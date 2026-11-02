@@ -1,18 +1,24 @@
 def test_phase_2_complete_agent_registry(client, db_session):
     # 1. Register owner user & get JWT token
-    reg_user = client.post("/api/v1/auth/register", json={
-        "email": "agent.ops@company.com",
-        "password": "Password1234!",
-        "full_name": "Operations Lead",
-        "role": "agent_operator",
-    })
+    reg_user = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "agent.ops@company.com",
+            "password": "Password1234!",
+            "full_name": "Operations Lead",
+            "role": "agent_operator",
+        },
+    )
     assert reg_user.status_code == 201
     user_id = reg_user.json()["id"]
 
-    login_res = client.post("/api/v1/auth/login", json={
-        "email": "agent.ops@company.com",
-        "password": "Password1234!",
-    })
+    login_res = client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": "agent.ops@company.com",
+            "password": "Password1234!",
+        },
+    )
     jwt_token = login_res.json()["access_token"]
     user_headers = {"Authorization": f"Bearer {jwt_token}"}
 
@@ -25,8 +31,16 @@ def test_phase_2_complete_agent_registry(client, db_session):
         "model_name": "gemini-2.0-flash",
         "metadata_json": {"department": "procurement", "version": "1.2.0"},
         "capabilities": [
-            {"capability_name": "ecommerce:search", "scope": "browsing", "description": "Search products"},
-            {"capability_name": "ecommerce:purchase", "scope": "financial", "description": "Execute purchases"},
+            {
+                "capability_name": "ecommerce:search",
+                "scope": "browsing",
+                "description": "Search products",
+            },
+            {
+                "capability_name": "ecommerce:purchase",
+                "scope": "financial",
+                "description": "Execute purchases",
+            },
         ],
     }
     create_res = client.post("/api/v1/agents/", headers=user_headers, json=agent_payload)
@@ -54,7 +68,9 @@ def test_phase_2_complete_agent_registry(client, db_session):
     assert agent_me_res.json()["id"] == agent_id
 
     # 4. Forged/invalid API key rejection
-    bad_key_res = client.get("/api/v1/agents/me", headers={"X-Agent-Key": "agp_live_fake_key_1234567890"})
+    bad_key_res = client.get(
+        "/api/v1/agents/me", headers={"X-Agent-Key": "agp_live_fake_key_1234567890"}
+    )
     assert bad_key_res.status_code == 401
 
     # 5. List agents owned by user
@@ -66,7 +82,7 @@ def test_phase_2_complete_agent_registry(client, db_session):
     update_res = client.patch(
         f"/api/v1/agents/{agent_id}",
         headers=user_headers,
-        json={"model_name": "gemini-2.5-pro", "description": "Upgraded procurement agent"}
+        json={"model_name": "gemini-2.5-pro", "description": "Upgraded procurement agent"},
     )
     assert update_res.status_code == 200
     assert update_res.json()["model_name"] == "gemini-2.5-pro"
@@ -75,7 +91,11 @@ def test_phase_2_complete_agent_registry(client, db_session):
     cap_res = client.post(
         f"/api/v1/agents/{agent_id}/capabilities",
         headers=user_headers,
-        json={"capability_name": "travel:flight_booking", "scope": "financial", "description": "Book corporate flights"}
+        json={
+            "capability_name": "travel:flight_booking",
+            "scope": "financial",
+            "description": "Book corporate flights",
+        },
     )
     assert cap_res.status_code == 200
     assert cap_res.json()["capability_name"] == "travel:flight_booking"
@@ -84,7 +104,7 @@ def test_phase_2_complete_agent_registry(client, db_session):
     suspend_res = client.post(
         f"/api/v1/agents/{agent_id}/status",
         headers=user_headers,
-        json={"status": "suspended", "reason": "Unusual volume of quote requests"}
+        json={"status": "suspended", "reason": "Unusual volume of quote requests"},
     )
     assert suspend_res.status_code == 200
     assert suspend_res.json()["status"] == "suspended"
@@ -99,7 +119,7 @@ def test_phase_2_complete_agent_registry(client, db_session):
     reactivate_res = client.post(
         f"/api/v1/agents/{agent_id}/status",
         headers=user_headers,
-        json={"status": "active", "reason": "Anomaly investigated and cleared"}
+        json={"status": "active", "reason": "Anomaly investigated and cleared"},
     )
     assert reactivate_res.status_code == 200
     assert reactivate_res.json()["status"] == "active"

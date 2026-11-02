@@ -12,11 +12,7 @@ from app.models.transaction import Transaction
 class PolicyEngine:
     @staticmethod
     def evaluate_transaction(
-        db: Session,
-        agent_id: str,
-        amount: float,
-        merchant: str,
-        category: str = ""
+        db: Session, agent_id: str, amount: float, merchant: str, category: str = ""
     ) -> tuple[bool, bool, str, list[str]]:
         """
         Deterministic Policy Enforcement.
@@ -30,9 +26,19 @@ class PolicyEngine:
         if not agent:
             return False, False, "Agent not found in registry", ["AGENT_NOT_FOUND"]
         if agent.is_kill_switched or agent.status in ("killed", "revoked"):
-            return False, False, f"Agent is terminated via Kill Switch: {agent.kill_reason}", ["KILL_SWITCH_ACTIVE"]
+            return (
+                False,
+                False,
+                f"Agent is terminated via Kill Switch: {agent.kill_reason}",
+                ["KILL_SWITCH_ACTIVE"],
+            )
         if agent.status == "suspended":
-            return False, True, "Agent is currently suspended; requires human review", ["AGENT_SUSPENDED"]
+            return (
+                False,
+                True,
+                "Agent is currently suspended; requires human review",
+                ["AGENT_SUSPENDED"],
+            )
 
         # 2. Query active permission policy
         now = datetime.now(timezone.utc)
@@ -45,7 +51,12 @@ class PolicyEngine:
             .first()
         )
         if not permission:
-            return False, False, "No active permission policy assigned to agent", ["NO_PERMISSION_POLICY"]
+            return (
+                False,
+                False,
+                "No active permission policy assigned to agent",
+                ["NO_PERMISSION_POLICY"],
+            )
 
         # Check validity window
         if permission.valid_until and permission.valid_until < now:

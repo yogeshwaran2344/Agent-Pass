@@ -10,7 +10,9 @@ class UserBase(BaseModel):
 
 class UserRegisterRequest(UserBase):
     password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
-    role: str = Field(default="agent_operator", description="Role: admin, agent_operator, auditor, user")
+    role: str = Field(
+        default="agent_operator", description="Role: admin, agent_operator, auditor, user"
+    )
 
 
 class UserLoginRequest(BaseModel):

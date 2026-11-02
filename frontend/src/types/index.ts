@@ -143,3 +143,53 @@ export interface AuditLogItem {
   description: string;
   created_at: string;
 }
+
+export interface Delegation {
+  id: string;
+  parent_agent_id: string;
+  child_agent_id: string;
+  parent_agent_name?: string;
+  child_agent_name?: string;
+  delegation_depth: number;
+  task_description: string | null;
+  delegated_budget_limit: number;
+  allowed_categories: string[];
+  is_active: boolean;
+  revocation_reason?: string;
+  revoked_at?: string;
+  created_at: string;
+  expires_at?: string;
+}
+
+export interface DelegationCreate {
+  parent_agent_id: string;
+  child_agent_id: string;
+  task_description: string;
+  delegated_budget_limit: number;
+  allowed_categories?: string[];
+  expires_in_hours?: number;
+}
+
+export interface NotificationItem {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  notification_type: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface RiskEvaluationRequest {
+  agent_id: string;
+  amount: number;
+  merchant: string;
+  velocity_tx_count_last_hour?: number;
+}
+
+export interface RiskEvaluationResult {
+  overall_risk_score: number;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  triggered_rules: string[];
+  explanation: string;
+}
