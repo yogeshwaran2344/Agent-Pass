@@ -188,7 +188,7 @@ export const DelegationPage: React.FC = () => {
                           {del.parent_agent_name || del.parent_agent_id.slice(0, 8)}
                         </span>
                         <span className="text-slate-400">&rarr;</span>
-                        <span className="text-blue-700">
+                        <span className="text-emerald-700">
                           {del.child_agent_name || del.child_agent_id.slice(0, 8)}
                         </span>
                       </div>
@@ -266,7 +266,7 @@ export const DelegationPage: React.FC = () => {
                   <td className="px-4 py-3 font-medium text-slate-900">
                     {del.parent_agent_name || del.parent_agent_id.slice(0, 8)}
                   </td>
-                  <td className="px-4 py-3 font-medium text-blue-700">
+                  <td className="px-4 py-3 font-medium text-emerald-700">
                     {del.child_agent_name || del.child_agent_id.slice(0, 8)}
                   </td>
                   <td className="px-4 py-3 font-mono text-slate-900 tabular-nums">

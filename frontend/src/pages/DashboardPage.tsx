@@ -83,8 +83,8 @@ export const DashboardPage: React.FC = () => {
   if (isLoading && !stats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-        <p className="text-xs text-slate-500">Loading account metrics...</p>
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-700" />
+        <p className="text-xs text-stone-500">Loading account metrics...</p>
       </div>
     );
   }
@@ -92,14 +92,14 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Colored Overview Banner */}
-      <div className="rounded-lg bg-[#0F2342] text-white p-6 border border-[#1E3A63] shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="rounded-lg bg-[#0D2D24] text-white p-6 border border-[#1A473B] shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-blue-500/20 border border-blue-400/30 text-sky-200 text-[11px] font-medium mb-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 text-[11px] font-medium mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             <span>Policy &amp; Intent Firewall Active</span>
           </div>
           <h1 className="text-xl font-bold tracking-tight">Governance Overview</h1>
-          <p className="text-xs text-slate-300 mt-1 max-w-xl">
+          <p className="text-xs text-emerald-100/80 mt-1 max-w-xl">
             Monitor registered autonomous agents, reserved 2-phase commitments, and live PayPal Sandbox settlements.
           </p>
         </div>
@@ -109,7 +109,7 @@ export const DashboardPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              className="border-sky-400/40 text-white hover:bg-white/10 hover:text-white"
+              className="border-emerald-400/40 text-white hover:bg-white/10 hover:text-white"
               leftIcon={<BrainCircuit className="w-3.5 h-3.5" />}
             >
               Intent Rules
@@ -172,11 +172,11 @@ export const DashboardPage: React.FC = () => {
         }
       >
         <div className="space-y-4">
-          <div className="p-3.5 rounded-md bg-blue-50/70 border border-blue-200">
-            <div className="text-[11px] font-semibold text-blue-900 mb-1">
+          <div className="p-3.5 rounded-md bg-emerald-50/70 border border-emerald-200">
+            <div className="text-[11px] font-semibold text-emerald-900 mb-1">
               Master Instruction
             </div>
-            <div className="font-mono text-xs text-slate-800">
+            <div className="font-mono text-xs text-stone-800">
               &quot;I need a laptop for college. Prioritize battery life and portability. Don&apos;t purchase gaming laptops. Budget under $1000.&quot;
             </div>
           </div>
@@ -199,7 +199,7 @@ export const DashboardPage: React.FC = () => {
                     Within budget, blocked on negative constraint
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-blue-800 font-mono tabular-nums">
+                <span className="text-sm font-semibold text-amber-800 font-mono tabular-nums">
                   $999.00 USD
                 </span>
               </div>
@@ -245,7 +245,7 @@ export const DashboardPage: React.FC = () => {
           action={
             <Link
               to="/approvals"
-              className="text-xs text-blue-700 hover:text-blue-900 flex items-center gap-1 font-medium"
+              className="text-xs text-emerald-700 hover:text-emerald-900 flex items-center gap-1 font-medium"
             >
               View all ({stats?.pending_approvals_count || 0}) <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
@@ -294,7 +294,7 @@ export const DashboardPage: React.FC = () => {
           action={
             <Link
               to="/audit"
-              className="text-xs text-blue-700 hover:text-blue-900 flex items-center gap-1 font-medium"
+              className="text-xs text-emerald-700 hover:text-emerald-900 flex items-center gap-1 font-medium"
             >
               Full log <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>

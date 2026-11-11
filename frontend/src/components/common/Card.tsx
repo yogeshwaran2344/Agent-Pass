@@ -22,9 +22,9 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const accentStyles = {
     none: '',
-    blue: 'border-t-2 border-t-blue-600',
+    blue: 'border-t-2 border-t-emerald-700',
     emerald: 'border-t-2 border-t-emerald-600',
-    amber: 'border-t-2 border-t-amber-500',
+    amber: 'border-t-2 border-t-amber-600',
     red: 'border-t-2 border-t-red-600',
     teal: 'border-t-2 border-t-teal-600',
   };
@@ -32,7 +32,7 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       className={clsx(
-        'rounded-lg border border-slate-200 bg-white shadow-card overflow-hidden',
+        'rounded-lg border border-[#E5E2D9] bg-white shadow-card overflow-hidden',
         accentStyles[accent],
         className
       )}
@@ -40,13 +40,13 @@ export const Card: React.FC<CardProps> = ({
       {(title || action) && (
         <div
           className={clsx(
-            'px-5 py-3.5 flex items-center justify-between gap-4 bg-[#F8FAFE]',
-            headerBorder && 'border-b border-slate-200/80'
+            'px-5 py-3.5 flex items-center justify-between gap-4 bg-[#FAF8F4]',
+            headerBorder && 'border-b border-[#E5E2D9]'
           )}
         >
           <div>
-            {title && <h3 className="text-sm font-semibold text-[#0F1E36] tracking-tight">{title}</h3>}
-            {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+            {title && <h3 className="text-sm font-semibold text-[#0D2D24] tracking-tight">{title}</h3>}
+            {subtitle && <p className="text-xs text-stone-500 mt-0.5">{subtitle}</p>}
           </div>
           {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
         </div>

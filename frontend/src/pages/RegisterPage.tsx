@@ -64,9 +64,9 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex">
+    <div className="min-h-screen bg-[#F6F4EF] flex">
       {/* Left Brand Panel (Desktop) */}
-      <div className="hidden lg:flex lg:w-[440px] xl:w-[480px] bg-[#0F1E36] text-white flex-col justify-between p-10 border-r border-[#1E3354]">
+      <div className="hidden lg:flex lg:w-[440px] xl:w-[480px] bg-[#0D2D24] text-white flex-col justify-between p-10 border-r border-[#1A473B]">
         <div>
           <Link to="/" className="inline-flex items-center gap-2.5">
             <BrandMark className="w-8 h-8" />
@@ -76,7 +76,7 @@ export const RegisterPage: React.FC = () => {
           <h1 className="mt-12 text-3xl font-bold tracking-tight leading-snug">
             Launch autonomous agents with hard financial guardrails.
           </h1>
-          <p className="mt-3 text-sm text-slate-300 leading-relaxed">
+          <p className="mt-3 text-sm text-emerald-100/80 leading-relaxed">
             Issue scoped agent API keys, define natural-language purchase constraints, and settle verified orders over PayPal Sandbox.
           </p>
 
@@ -222,9 +222,9 @@ export const RegisterPage: React.FC = () => {
               </Button>
             </form>
 
-            <div className="mt-5 text-center text-xs text-slate-500">
+            <div className="mt-5 text-center text-xs text-stone-500">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-blue-700 hover:underline">
+              <Link to="/login" className="font-semibold text-emerald-700 hover:underline">
                 Sign in
               </Link>
             </div>

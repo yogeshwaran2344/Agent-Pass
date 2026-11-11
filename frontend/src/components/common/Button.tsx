@@ -35,17 +35,17 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-blue-700 hover:bg-blue-800 text-white border border-blue-700 shadow-subtle focus:ring-blue-600',
+      'bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-700 shadow-subtle focus:ring-emerald-600',
     secondary:
-      'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-subtle focus:ring-blue-500',
+      'bg-white hover:bg-stone-50 text-stone-700 border border-stone-300 shadow-subtle focus:ring-emerald-600',
     danger:
       'bg-red-600 hover:bg-red-700 text-white border border-red-600 shadow-subtle focus:ring-red-600',
     paypal:
-      'bg-[#FFC439] hover:bg-[#F5B928] text-[#003087] font-semibold border border-[#E5AD27] shadow-subtle focus:ring-[#003087]',
+      'bg-[#FFC439] hover:bg-[#F5B928] text-[#1C1917] font-semibold border border-[#E5AD27] shadow-subtle focus:ring-amber-500',
     ghost:
-      'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 focus:ring-slate-400',
+      'bg-transparent hover:bg-stone-100 text-stone-600 hover:text-stone-900 focus:ring-stone-400',
     outline:
-      'bg-transparent hover:bg-blue-50/50 text-blue-700 border border-blue-300 focus:ring-blue-500',
+      'bg-transparent hover:bg-emerald-50 text-emerald-800 border border-emerald-300 focus:ring-emerald-600',
   };
 
   return (

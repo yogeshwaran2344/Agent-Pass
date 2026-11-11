@@ -127,20 +127,20 @@ export const AnalyticsPage: React.FC = () => {
                     <stop offset="95%" stopColor="#059669" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorReserved" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#D97706" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#D97706" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="date" stroke="#64748B" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#64748B" tick={{ fontSize: 11 }} unit="$" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E2D9" />
+                <XAxis dataKey="date" stroke="#78716C" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#78716C" tick={{ fontSize: 11 }} unit="$" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#FFFFFF',
-                    borderColor: '#E2E8F0',
+                    borderColor: '#E5E2D9',
                     borderRadius: '6px',
                     fontSize: '12px',
-                    color: '#0F172A',
+                    color: '#1C1917',
                   }}
                 />
                 <Area
@@ -155,7 +155,7 @@ export const AnalyticsPage: React.FC = () => {
                 <Area
                   type="monotone"
                   dataKey="reserved"
-                  stroke="#2563EB"
+                  stroke="#D97706"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorReserved)"
@@ -188,7 +188,7 @@ export const AnalyticsPage: React.FC = () => {
                     color: '#0F172A',
                   }}
                 />
-                <Bar dataKey="count" fill="#2563EB" radius={[4, 4, 0, 0]} name="Events" />
+                <Bar dataKey="count" fill="#047857" radius={[4, 4, 0, 0]} name="Events" />
               </BarChart>
             </ResponsiveContainer>
           </div>

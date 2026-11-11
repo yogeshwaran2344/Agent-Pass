@@ -157,7 +157,7 @@ export const Navbar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-blue-200 bg-blue-50 text-[#003087] text-xs font-medium">
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-medium">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               paypalMode === 'live_sandbox' ? 'bg-emerald-600' : 'bg-amber-500'
@@ -172,12 +172,12 @@ export const Navbar: React.FC = () => {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={handleToggleDropdown}
-            className="relative p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors border border-slate-200"
+            className="relative p-2 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-md transition-colors border border-stone-200"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-blue-700 text-white rounded-full text-[10px] font-semibold">
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-emerald-700 text-white rounded-full text-[10px] font-semibold">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -220,12 +220,12 @@ export const Navbar: React.FC = () => {
                     <div
                       key={n.id}
                       className={`p-3 text-xs transition-colors flex items-start justify-between gap-3 ${
-                        n.is_read ? 'bg-white' : 'bg-blue-50/40'
+                        n.is_read ? 'bg-white' : 'bg-emerald-50/40'
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />}
+                          {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />}
                           <span className="font-semibold text-slate-900">{n.title}</span>
                         </div>
                         <p className="text-slate-600 text-[11px] leading-relaxed">{n.message}</p>

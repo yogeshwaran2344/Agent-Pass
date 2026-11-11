@@ -45,13 +45,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
   ];
 
   return (
-    <aside className="hidden md:flex w-60 bg-[#0F1E36] border-r border-[#1E3354] flex-col h-screen sticky top-0 z-30 select-none">
+    <aside className="hidden md:flex w-60 bg-[#0D2D24] border-r border-[#1A473B] flex-col h-screen sticky top-0 z-30 select-none">
       {/* Brand Header */}
-      <div className="h-14 flex items-center px-5 border-b border-[#1E3354] gap-2.5">
+      <div className="h-14 flex items-center px-5 border-b border-[#1A473B] gap-2.5">
         <BrandMark className="w-7 h-7" />
         <div className="flex items-baseline gap-1.5">
           <span className="font-bold text-sm tracking-tight text-white">AgentPass</span>
-          <span className="text-[10px] font-mono text-blue-300/80">sandbox</span>
+          <span className="text-[10px] font-mono text-emerald-300/80">sandbox</span>
         </div>
       </div>
 
@@ -65,8 +65,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
               clsx(
                 'group flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-md transition-colors',
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:text-white hover:bg-white/10'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-emerald-100/80 hover:text-white hover:bg-white/10'
               )
             }
           >
@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
                   <item.icon
                     className={clsx(
                       'w-4 h-4',
-                      isActive ? 'text-white' : 'text-blue-300/70 group-hover:text-white'
+                      isActive ? 'text-white' : 'text-emerald-300/70 group-hover:text-white'
                     )}
                   />
                   <span>{item.name}</span>
@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
                       'text-[11px] font-mono font-semibold px-1.5 py-0.2 rounded',
                       isActive
                         ? 'bg-white/20 text-white'
-                        : 'bg-amber-400 text-[#0F1E36]'
+                        : 'bg-amber-400 text-[#0D2D24]'
                     )}
                   >
                     {item.count}
@@ -100,21 +100,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
       </nav>
 
       {/* User Footer */}
-      <div className="p-3.5 border-t border-[#1E3354] bg-[#0B1629]">
+      <div className="p-3.5 border-t border-[#1A473B] bg-[#081F19]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+            <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
               {user?.full_name ? user.full_name[0].toUpperCase() : 'U'}
             </div>
             <div className="truncate text-xs">
               <div className="font-medium text-white truncate">{user?.full_name || 'Operator'}</div>
-              <div className="text-slate-400 text-[11px] truncate">{user?.email}</div>
+              <div className="text-emerald-200/70 text-[11px] truncate">{user?.email}</div>
             </div>
           </div>
           <button
             onClick={() => logout()}
             title="Sign out"
-            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors shrink-0"
+            className="p-1.5 text-emerald-200/70 hover:text-red-300 hover:bg-red-500/15 rounded-md transition-colors shrink-0"
           >
             <LogOut className="w-4 h-4" />
           </button>

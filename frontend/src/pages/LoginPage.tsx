@@ -80,9 +80,9 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F7FB] flex">
+    <div className="min-h-screen bg-[#F6F4EF] flex">
       {/* Left Brand Panel (Desktop) */}
-      <div className="hidden lg:flex lg:w-[440px] xl:w-[480px] bg-[#0F1E36] text-white flex-col justify-between p-10 border-r border-[#1E3354]">
+      <div className="hidden lg:flex lg:w-[440px] xl:w-[480px] bg-[#0D2D24] text-white flex-col justify-between p-10 border-r border-[#1A473B]">
         <div>
           <Link to="/" className="inline-flex items-center gap-2.5">
             <BrandMark className="w-8 h-8" />
@@ -92,7 +92,7 @@ export const LoginPage: React.FC = () => {
           <h1 className="mt-12 text-3xl font-bold tracking-tight leading-snug">
             Intent-verified financial controls for autonomous agents.
           </h1>
-          <p className="mt-3 text-sm text-slate-300 leading-relaxed">
+          <p className="mt-3 text-sm text-emerald-100/80 leading-relaxed">
             Keep every agent within policy limits, catch semantic intent conflicts before checkout, and settle safely over PayPal Sandbox.
           </p>
 
@@ -200,9 +200,9 @@ export const LoginPage: React.FC = () => {
               </Button>
             </div>
 
-            <div className="mt-5 text-center text-xs text-slate-500">
+            <div className="mt-5 text-center text-xs text-stone-500">
               Don&apos;t have an account?{' '}
-              <Link to="/register" className="font-semibold text-blue-700 hover:underline">
+              <Link to="/register" className="font-semibold text-emerald-700 hover:underline">
                 Create account
               </Link>
             </div>

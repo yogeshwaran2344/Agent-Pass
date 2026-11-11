@@ -26,12 +26,12 @@ export const Badge: React.FC<BadgeProps> = ({
   dot = false,
 }) => {
   const styles: Record<BadgeVariant, { bg: string; text: string; dotColor: string }> = {
-    success: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', dotColor: 'bg-emerald-600' },
-    warning: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', dotColor: 'bg-amber-600' },
-    danger: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', dotColor: 'bg-red-600' },
-    info: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', dotColor: 'bg-blue-600' },
-    neutral: { bg: 'bg-slate-100 border-slate-200', text: 'text-slate-700', dotColor: 'bg-slate-500' },
-    purple: { bg: 'bg-slate-100 border-slate-200', text: 'text-slate-800', dotColor: 'bg-slate-700' },
+    success: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', dotColor: 'bg-emerald-600' },
+    warning: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800', dotColor: 'bg-amber-600' },
+    danger: { bg: 'bg-red-50 border-red-200', text: 'text-red-800', dotColor: 'bg-red-600' },
+    info: { bg: 'bg-teal-50 border-teal-200', text: 'text-teal-800', dotColor: 'bg-teal-600' },
+    neutral: { bg: 'bg-stone-100 border-stone-200', text: 'text-stone-700', dotColor: 'bg-stone-500' },
+    purple: { bg: 'bg-orange-50 border-orange-200', text: 'text-orange-800', dotColor: 'bg-orange-600' },
     match: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800 font-semibold', dotColor: 'bg-emerald-600' },
     drift: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-800 font-semibold', dotColor: 'bg-amber-600' },
     conflict: { bg: 'bg-red-50 border-red-200', text: 'text-red-800 font-semibold', dotColor: 'bg-red-600' },
