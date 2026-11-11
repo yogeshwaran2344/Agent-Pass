@@ -83,7 +83,7 @@ export const DashboardPage: React.FC = () => {
   if (isLoading && !stats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
-        <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
         <p className="text-xs text-slate-500">Loading account metrics...</p>
       </div>
     );
@@ -91,18 +91,27 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      {/* Colored Overview Banner */}
+      <div className="rounded-lg bg-[#0F2342] text-white p-6 border border-[#1E3A63] shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Governance Overview</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Active agents, spend reservations, and intent checks across your PayPal Sandbox rail.
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-blue-500/20 border border-blue-400/30 text-sky-200 text-[11px] font-medium mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>Policy &amp; Intent Firewall Active</span>
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">Governance Overview</h1>
+          <p className="text-xs text-slate-300 mt-1 max-w-xl">
+            Monitor registered autonomous agents, reserved 2-phase commitments, and live PayPal Sandbox settlements.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           <Link to="/intents">
-            <Button variant="secondary" size="sm" leftIcon={<BrainCircuit className="w-3.5 h-3.5" />}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-sky-400/40 text-white hover:bg-white/10 hover:text-white"
+              leftIcon={<BrainCircuit className="w-3.5 h-3.5" />}
+            >
               Intent Rules
             </Button>
           </Link>
@@ -148,6 +157,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Live Intent Verification Test */}
       <Card
+        accent="blue"
         title="Intent Conflict Check"
         subtitle="Test whether a proposed checkout conflicts with the user's saved prompt"
         action={
@@ -162,8 +172,8 @@ export const DashboardPage: React.FC = () => {
         }
       >
         <div className="space-y-4">
-          <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
-            <div className="text-[11px] font-medium text-slate-500 mb-1">
+          <div className="p-3.5 rounded-md bg-blue-50/70 border border-blue-200">
+            <div className="text-[11px] font-semibold text-blue-900 mb-1">
               Master Instruction
             </div>
             <div className="font-mono text-xs text-slate-800">
@@ -179,7 +189,7 @@ export const DashboardPage: React.FC = () => {
           )}
 
           {simulationResult && (
-            <div className="p-4 rounded-md border border-red-200 bg-red-50/50 space-y-3">
+            <div className="p-4 rounded-md border border-red-200 bg-red-50/60 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="conflict" dot>
@@ -189,7 +199,7 @@ export const DashboardPage: React.FC = () => {
                     Within budget, blocked on negative constraint
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-slate-900 font-mono tabular-nums">
+                <span className="text-sm font-semibold text-blue-800 font-mono tabular-nums">
                   $999.00 USD
                 </span>
               </div>
@@ -216,7 +226,7 @@ export const DashboardPage: React.FC = () => {
                   Checkout halted prior to PayPal order creation.
                 </p>
                 <Link to="/approvals">
-                  <Button size="sm" variant="secondary">
+                  <Button size="sm" variant="paypal">
                     Open Approval Queue
                   </Button>
                 </Link>
@@ -229,12 +239,13 @@ export const DashboardPage: React.FC = () => {
       {/* Two Column Grid: Pending Approvals & Audit Events */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card
+          accent="amber"
           title="Pending Approvals"
           subtitle="Flagged proposals awaiting review"
           action={
             <Link
               to="/approvals"
-              className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 font-medium"
+              className="text-xs text-blue-700 hover:text-blue-900 flex items-center gap-1 font-medium"
             >
               View all ({stats?.pending_approvals_count || 0}) <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
@@ -245,7 +256,7 @@ export const DashboardPage: React.FC = () => {
               stats.pending_approvals.map((req) => (
                 <div
                   key={req.id}
-                  className="p-4 rounded-md border border-slate-200 bg-slate-50/50 space-y-2"
+                  className="p-4 rounded-md border border-amber-200 bg-amber-50/40 space-y-2"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -258,7 +269,7 @@ export const DashboardPage: React.FC = () => {
                   </div>
                   <div className="text-sm font-medium text-slate-900">{req.item_description}</div>
                   <div className="text-xs text-slate-600 line-clamp-2">{req.reason_for_approval}</div>
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-between pt-2 border-t border-amber-200/70">
                     <span className="text-[11px] text-slate-500">
                       {req.merchant_name} · PayPal Sandbox
                     </span>
@@ -277,12 +288,13 @@ export const DashboardPage: React.FC = () => {
         </Card>
 
         <Card
+          accent="teal"
           title="Recent Audit Events"
           subtitle="Latest recorded policy and settlement activity"
           action={
             <Link
               to="/audit"
-              className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 font-medium"
+              className="text-xs text-blue-700 hover:text-blue-900 flex items-center gap-1 font-medium"
             >
               Full log <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
@@ -295,7 +307,7 @@ export const DashboardPage: React.FC = () => {
                   key={event.id}
                   className="flex items-start gap-3 p-3 rounded-md bg-slate-50 border border-slate-200 text-xs"
                 >
-                  <Badge variant="neutral">{event.action}</Badge>
+                  <Badge variant="info">{event.action}</Badge>
                   <div className="flex-1 min-w-0">
                     <p className="text-slate-800 truncate">{event.description || event.action}</p>
                     <span className="text-[10px] text-slate-400 font-mono">
