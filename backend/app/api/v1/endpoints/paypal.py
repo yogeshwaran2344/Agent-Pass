@@ -34,6 +34,16 @@ async def create_paypal_order(req: PayPalOrderCreate, db: Session = Depends(get_
         raise HTTPException(status_code=500, detail=f"PayPal API error: {str(e)}")
 
 
+@router.get("/status")
+def get_paypal_integration_status():
+    """Return safe PayPal Sandbox connection status (never exposes secrets)."""
+    is_live = PayPalSandboxService.is_live_sandbox_configured()
+    return {
+        "mode": "live_sandbox" if is_live else "mock_sandbox",
+        "sandbox_configured": is_live,
+    }
+
+
 @router.post("/capture-order")
 async def capture_paypal_order(req: PayPalOrderCapture, db: Session = Depends(get_db)):
     try:
@@ -42,6 +52,8 @@ async def capture_paypal_order(req: PayPalOrderCapture, db: Session = Depends(ge
             paypal_order_id=req.paypal_order_id,
         )
         return res
+    except PermissionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

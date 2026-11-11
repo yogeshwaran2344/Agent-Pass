@@ -5,6 +5,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.models.approval import ApprovalRequest
 from app.models.commitment import Commitment
 from app.models.transaction import PayPalOrder, Transaction
 from app.services.policy_engine import PolicyEngine
@@ -12,14 +13,17 @@ from app.services.policy_engine import PolicyEngine
 
 class PayPalSandboxService:
     @staticmethod
+    def is_live_sandbox_configured() -> bool:
+        return bool(
+            settings.PAYPAL_CLIENT_ID
+            and settings.PAYPAL_CLIENT_SECRET
+            and settings.PAYPAL_CLIENT_ID != "mock_client_id"
+        )
+
+    @staticmethod
     async def get_access_token() -> str:
         """Fetch OAuth2 Bearer token from PayPal Sandbox."""
-        if (
-            not settings.PAYPAL_CLIENT_ID
-            or not settings.PAYPAL_CLIENT_SECRET
-            or settings.PAYPAL_CLIENT_ID == "mock_client_id"
-        ):
-            # Return synthetic test token in mock/dev mode
+        if not PayPalSandboxService.is_live_sandbox_configured():
             return "mock_sandbox_access_token_agentpass"
 
         url = f"{settings.PAYPAL_API_BASE}/v1/oauth2/token"
@@ -32,7 +36,7 @@ class PayPalSandboxService:
                 auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
                 data=data,
                 headers=headers,
-                timeout=15.0,
+                timeout=20.0,
             )
             res.raise_for_status()
             return res.json().get("access_token")
@@ -46,7 +50,7 @@ class PayPalSandboxService:
     ) -> dict[str, Any]:
         """
         Create a PayPal Sandbox order.
-        Strictly requires AGENTPASS deterministic policy check before creation!
+        Strictly requires AGENTPASS deterministic policy check (or human approval) before creation!
         """
         tx = db.query(Transaction).filter(Transaction.id == transaction_id).first()
         if not tx:
@@ -58,11 +62,28 @@ class PayPalSandboxService:
         )
         if not is_auth:
             raise PermissionError(f"AGENTPASS Policy Blocked Order: {reason}")
-        if req_approval:
-            raise PermissionError(f"Transaction requires prior human approval: {reason}")
 
-        # If live credentials exist, execute HTTP call against sandbox API; otherwise mock response
-        if settings.PAYPAL_CLIENT_ID and settings.PAYPAL_CLIENT_ID != "mock_client_id":
+        if req_approval:
+            approval_id = (tx.metadata_json or {}).get("approval_id")
+            approved = False
+            if approval_id:
+                appr = (
+                    db.query(ApprovalRequest)
+                    .filter(
+                        ApprovalRequest.id == approval_id,
+                        ApprovalRequest.agent_id == tx.agent_id,
+                        ApprovalRequest.status == "approved",
+                    )
+                    .first()
+                )
+                approved = bool(appr and tx.amount <= appr.amount)
+            if not approved:
+                raise PermissionError(f"Transaction requires prior human approval: {reason}")
+
+        approve_url: str | None = None
+        is_live = PayPalSandboxService.is_live_sandbox_configured()
+
+        if is_live:
             token = await PayPalSandboxService.get_access_token()
             url = f"{settings.PAYPAL_API_BASE}/v2/checkout/orders"
             headers = {
@@ -74,6 +95,7 @@ class PayPalSandboxService:
                 "purchase_units": [
                     {
                         "reference_id": tx.id,
+                        "custom_id": tx.id,
                         "amount": {
                             "currency_code": tx.currency,
                             "value": f"{tx.amount:.2f}",
@@ -84,13 +106,18 @@ class PayPalSandboxService:
                 "application_context": {
                     "return_url": return_url or "https://agentpass.local/paypal/return",
                     "cancel_url": cancel_url or "https://agentpass.local/paypal/cancel",
+                    "user_action": "PAY_NOW",
                 },
             }
             async with httpx.AsyncClient() as client:
-                res = await client.post(url, json=payload, headers=headers, timeout=20.0)
+                res = await client.post(url, json=payload, headers=headers, timeout=25.0)
                 res.raise_for_status()
                 data = res.json()
                 paypal_order_id = data["id"]
+                for link in data.get("links", []):
+                    if link.get("rel") in ("approve", "payer-action"):
+                        approve_url = link.get("href")
+                        break
         else:
             paypal_order_id = f"PAYPAL-MOCK-ORDER-{uuid.uuid4().hex[:12].upper()}"
             data = {"id": paypal_order_id, "status": "CREATED", "links": []}
@@ -108,7 +135,13 @@ class PayPalSandboxService:
         db.commit()
         db.refresh(pp_order)
 
-        return {"paypal_order_id": paypal_order_id, "status": "CREATED", "details": data}
+        return {
+            "paypal_order_id": paypal_order_id,
+            "status": "CREATED",
+            "mode": "live_sandbox" if is_live else "mock_sandbox",
+            "approve_url": approve_url,
+            "details": data,
+        }
 
     @staticmethod
     async def capture_order(db: Session, paypal_order_id: str) -> dict[str, Any]:
@@ -123,8 +156,7 @@ class PayPalSandboxService:
         if not tx:
             raise ValueError(f"Transaction for order '{paypal_order_id}' not found.")
 
-        # In production/sandbox with valid credentials
-        if settings.PAYPAL_CLIENT_ID and settings.PAYPAL_CLIENT_ID != "mock_client_id":
+        if PayPalSandboxService.is_live_sandbox_configured():
             token = await PayPalSandboxService.get_access_token()
             url = f"{settings.PAYPAL_API_BASE}/v2/checkout/orders/{paypal_order_id}/capture"
             headers = {
@@ -132,7 +164,15 @@ class PayPalSandboxService:
                 "Authorization": f"Bearer {token}",
             }
             async with httpx.AsyncClient() as client:
-                res = await client.post(url, headers=headers, timeout=20.0)
+                res = await client.post(url, headers=headers, timeout=25.0)
+                if res.status_code == 422:
+                    err_body = res.json()
+                    issue = err_body.get("details", [{}])[0].get("issue", "")
+                    if issue == "ORDER_NOT_APPROVED":
+                        raise PermissionError(
+                            "Payer has not approved this order on PayPal Checkout yet. Complete checkout via the approval URL first, then capture."
+                        )
+                    raise PermissionError(f"PayPal rejected capture (422): {err_body}")
                 res.raise_for_status()
                 data = res.json()
                 status = data.get("status", "COMPLETED")

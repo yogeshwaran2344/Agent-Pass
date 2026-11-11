@@ -4,6 +4,8 @@ import { Transaction } from '../types';
 export interface CreateTransactionPayload {
   agent_id: string;
   commitment_id?: string;
+  approval_id?: string;
+  idempotency_key?: string;
   amount: number;
   merchant: string;
   currency?: string;

@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class TransactionCreate(BaseModel):
     agent_id: str
     commitment_id: str | None = None
+    approval_id: str | None = None
     amount: float
     currency: str = "USD"
     merchant: str

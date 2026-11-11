@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.approval import ApprovalRequest
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionRead
 from app.services.policy_engine import PolicyEngine
@@ -32,11 +33,29 @@ def create_transaction(tx_in: TransactionCreate, db: Session = Depends(get_db)):
     )
     if not is_auth:
         raise HTTPException(status_code=403, detail=f"Policy Blocked: {reason}")
+
+    metadata = dict(tx_in.metadata_json or {})
     if req_appr:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Transaction requires prior human approval: {reason}",
-        )
+        has_valid_approval = False
+        if tx_in.approval_id:
+            appr = (
+                db.query(ApprovalRequest)
+                .filter(
+                    ApprovalRequest.id == tx_in.approval_id,
+                    ApprovalRequest.agent_id == tx_in.agent_id,
+                    ApprovalRequest.status == "approved",
+                )
+                .first()
+            )
+            if appr and tx_in.amount <= appr.amount:
+                has_valid_approval = True
+                metadata["approval_id"] = appr.id
+
+        if not has_valid_approval:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Transaction requires prior human approval: {reason}",
+            )
 
     tx = Transaction(
         id=str(uuid.uuid4()),
@@ -48,7 +67,7 @@ def create_transaction(tx_in: TransactionCreate, db: Session = Depends(get_db)):
         payment_method=tx_in.payment_method,
         idempotency_key=tx_in.idempotency_key,
         status="authorized",
-        metadata_json=tx_in.metadata_json,
+        metadata_json=metadata,
     )
     db.add(tx)
     db.commit()
