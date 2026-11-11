@@ -1,14 +1,23 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const resolveBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (!envUrl) return '/api/v1';
-  const trimmed = envUrl.replace(/\/+$/, '');
-  return trimmed.endsWith('/api/v1') ? trimmed : `${trimmed}/api/v1`;
+  const raw = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (!raw) return '/api/v1';
+
+  let url = raw.replace(/\/+$/, '');
+  // Render Blueprint's `fromService.property: host` returns "<service>.onrender.com" without protocol
+  if (!url.startsWith('/') && !/^https?:\/\//i.test(url)) {
+    const isLocal = url.startsWith('localhost') || url.startsWith('127.0.0.1');
+    url = `${isLocal ? 'http' : 'https'}://${url}`;
+  }
+
+  return url.endsWith('/api/v1') ? url : `${url}/api/v1`;
 };
 
+export const API_BASE_URL = resolveBaseUrl();
+
 const api = axios.create({
-  baseURL: resolveBaseUrl(),
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -75,7 +84,7 @@ api.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const refreshRes = await axios.post(`${resolveBaseUrl()}/auth/refresh`, {
+          const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           });
           const { access_token, refresh_token: nextRefresh } = refreshRes.data;
@@ -113,6 +122,13 @@ api.interceptors.response.use(
 
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
+    if (
+      error.response?.status === 404 &&
+      API_BASE_URL === '/api/v1' &&
+      !['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ) {
+      return 'Backend API not reachable (404). Set VITE_API_BASE_URL on your frontend service to your backend URL (e.g. https://agentpass-backend.onrender.com) and redeploy.';
+    }
     const detail = error.response?.data?.detail;
     if (typeof detail === 'string') return detail;
     if (Array.isArray(detail))
