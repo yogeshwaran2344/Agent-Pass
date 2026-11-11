@@ -113,15 +113,16 @@ async def handle_paypal_webhook(
                 if comm:
                     comm.status = "settled"
 
-            # Create notification
-            notif = Notification(
-                id=str(uuid.uuid4()),
-                user_id=tx.agent.owner_id if tx.agent else "system",
-                title="PayPal Capture Completed",
-                message=f"Autonomous transaction #{tx.id[:8]} of ${tx.amount:.2f} at {tx.merchant} was settled on PayPal Sandbox.",
-                notification_type="transaction_completed",
-            )
-            db.add(notif)
+            # Create notification if owner resolved
+            if tx.agent and tx.agent.owner_id:
+                notif = Notification(
+                    id=str(uuid.uuid4()),
+                    user_id=tx.agent.owner_id,
+                    title="PayPal Capture Completed",
+                    message=f"Autonomous transaction #{tx.id[:8]} of ${tx.amount:.2f} at {tx.merchant} was settled on PayPal Sandbox.",
+                    notification_type="transaction_completed",
+                )
+                db.add(notif)
 
             # Record security audit log
             audit = AuditLog(

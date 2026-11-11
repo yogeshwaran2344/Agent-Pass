@@ -7,7 +7,8 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, user: User, refreshToken?: string) => void;
+  setUser: (user: User) => void;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -18,19 +19,28 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: !!localStorage.getItem('agentpass_token'),
   isLoading: false,
 
-  login: (token: string, user: User) => {
+  login: (token: string, user: User, refreshToken?: string) => {
     localStorage.setItem('agentpass_token', token);
+    if (refreshToken) {
+      localStorage.setItem('agentpass_refresh_token', refreshToken);
+    }
     localStorage.setItem('agentpass_user', JSON.stringify(user));
     set({ token, user, isAuthenticated: true });
+  },
+
+  setUser: (user: User) => {
+    localStorage.setItem('agentpass_user', JSON.stringify(user));
+    set({ user });
   },
 
   logout: async () => {
     try {
       await api.post('/auth/logout');
-    } catch (e) {
-      // ignore
+    } catch {
+      // Ignore network/401 errors during logout
     } finally {
       localStorage.removeItem('agentpass_token');
+      localStorage.removeItem('agentpass_refresh_token');
       localStorage.removeItem('agentpass_user');
       set({ user: null, token: null, isAuthenticated: false });
     }
@@ -48,6 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('agentpass_user', JSON.stringify(res.data));
     } catch {
       localStorage.removeItem('agentpass_token');
+      localStorage.removeItem('agentpass_refresh_token');
       localStorage.removeItem('agentpass_user');
       set({ user: null, token: null, isAuthenticated: false });
     }

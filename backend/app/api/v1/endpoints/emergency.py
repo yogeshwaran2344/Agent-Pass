@@ -24,18 +24,18 @@ def trigger_kill_switch(req: KillSwitchRequest, db: Session = Depends(get_db)):
         scope=req.scope,
     )
 
-    # Emit urgent notification to all users/admins
+    # Emit urgent notification to admin/operator if user exists
     first_user = db.query(User).first()
-    user_id = first_user.id if first_user else "system"
-    notif = Notification(
-        id=str(uuid.uuid4()),
-        user_id=user_id,
-        title="EMERGENCY KILL SWITCH TRIGGERED",
-        message=f"Kill switch activated across scope '{req.scope}'. Reason: {req.reason}. {len(affected)} agent(s) terminated.",
-        notification_type="KILL_SWITCH_TRIGGERED",
-    )
-    db.add(notif)
-    db.commit()
+    if first_user:
+        notif = Notification(
+            id=str(uuid.uuid4()),
+            user_id=first_user.id,
+            title="EMERGENCY KILL SWITCH TRIGGERED",
+            message=f"Kill switch activated across scope '{req.scope}'. Reason: {req.reason}. {len(affected)} agent(s) terminated.",
+            notification_type="KILL_SWITCH_TRIGGERED",
+        )
+        db.add(notif)
+        db.commit()
 
     return {
         "status": "TRIGGERED",

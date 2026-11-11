@@ -1,18 +1,43 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Shield, Lock, Mail, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Shield, Lock, Mail, AlertCircle, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../store/useAuthStore';
-import api from '../services/api';
+import api, { getErrorMessage } from '../services/api';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
-  const { login } = useAuthStore();
+  const { login, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (location.state as any)?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(redirectTo, { replace: true });
+    }
+  }, [isAuthenticated, navigate, redirectTo]);
+
+  const completeLogin = async (loginEmail: string, loginPassword: string) => {
+    const res = await api.post('/auth/login', {
+      email: loginEmail.trim(),
+      password: loginPassword,
+    });
+    const { access_token, refresh_token } = res.data;
+
+    const userRes = await api.get('/users/me', {
+      headers: { Authorization: `Bearer ${access_token}` },
+    });
+
+    login(access_token, userRes.data, refresh_token);
+    navigate(redirectTo, { replace: true });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,20 +45,37 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const res = await api.post('/auth/login', { email, password });
-      const { access_token } = res.data;
-
-      // Fetch user profile
-      const userRes = await api.get('/users/me', {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      login(access_token, userRes.data);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid email or password');
+      await completeLogin(email, password);
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDemoSignIn = async () => {
+    setError('');
+    setIsDemoLoading(true);
+    const demoEmail = 'demo@agentpass.ai';
+    const demoPass = 'AgentPassDemo123!';
+
+    try {
+      try {
+        await completeLogin(demoEmail, demoPass);
+      } catch {
+        // Auto-provision demo operator on fresh database
+        await api.post('/auth/register', {
+          email: demoEmail,
+          password: demoPass,
+          full_name: 'Demo Governance Operator',
+          role: 'admin',
+        });
+        await completeLogin(demoEmail, demoPass);
+      }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsDemoLoading(false);
     }
   };
 
@@ -66,6 +108,7 @@ export const LoginPage: React.FC = () => {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="operator@enterprise.ai"
@@ -81,13 +124,22 @@ export const LoginPage: React.FC = () => {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-4 py-2 bg-surface/80 border border-surface-border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full pl-10 pr-10 py-2 bg-surface/80 border border-surface-border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -95,6 +147,19 @@ export const LoginPage: React.FC = () => {
               Sign In to Console
             </Button>
           </form>
+
+          <div className="mt-4 pt-4 border-t border-surface-border/60">
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={handleDemoSignIn}
+              isLoading={isDemoLoading}
+              leftIcon={<Sparkles className="w-4 h-4 text-indigo-400" />}
+            >
+              Quick Demo Operator Sign-In
+            </Button>
+          </div>
 
           <div className="mt-6 text-center text-xs text-slate-400">
             Don't have an account?{' '}

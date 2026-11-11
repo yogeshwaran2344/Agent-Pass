@@ -31,8 +31,7 @@ class DashboardStatsResponse(BaseModel):
 def get_dashboard_stats(
     current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
 ):
-    """Aggregate live metrics for the user's dashboard."""
-    # Agent stats
+    """Aggregate live metrics for the user's dashboard with strict tenant isolation."""
     agents = db.query(Agent).filter(Agent.owner_id == current_user.id).all()
     total_agents = len(agents)
     active_agents = len([a for a in agents if a.status == "active"])
@@ -40,49 +39,57 @@ def get_dashboard_stats(
 
     agent_ids = [a.id for a in agents]
 
-    # Pending approvals
-    pending_approvals = (
-        db.query(ApprovalRequest)
-        .filter(
-            ApprovalRequest.agent_id.in_(agent_ids) if agent_ids else True,
-            ApprovalRequest.status == "pending",
+    if agent_ids:
+        pending_approvals = (
+            db.query(ApprovalRequest)
+            .filter(
+                ApprovalRequest.agent_id.in_(agent_ids),
+                ApprovalRequest.status == "pending",
+            )
+            .order_by(ApprovalRequest.created_at.desc())
+            .limit(5)
+            .all()
         )
-        .order_by(ApprovalRequest.created_at.desc())
-        .limit(5)
+        reserved_sum = (
+            db.query(func.coalesce(func.sum(Commitment.amount), 0.0))
+            .filter(
+                Commitment.agent_id.in_(agent_ids),
+                Commitment.status == "reserved",
+            )
+            .scalar()
+        )
+        settled_sum = (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
+            .filter(
+                Transaction.agent_id.in_(agent_ids),
+                Transaction.status == "completed",
+            )
+            .scalar()
+        )
+        txs = (
+            db.query(Transaction)
+            .filter(Transaction.agent_id.in_(agent_ids))
+            .order_by(Transaction.created_at.desc())
+            .limit(5)
+            .all()
+        )
+    else:
+        pending_approvals = []
+        reserved_sum = 0.0
+        settled_sum = 0.0
+        txs = []
+
+    # Recent audit events scoped to user's entities or actions
+    scoped_entity_ids = [current_user.id, *agent_ids, *[t.id for t in txs]]
+    audit_logs = (
+        db.query(AuditLog)
+        .filter(
+            (AuditLog.actor_id == current_user.id) | (AuditLog.entity_id.in_(scoped_entity_ids))
+        )
+        .order_by(AuditLog.created_at.desc())
+        .limit(6)
         .all()
     )
-
-    # Commitments reserved
-    reserved_sum = (
-        db.query(func.coalesce(func.sum(Commitment.amount), 0.0))
-        .filter(
-            Commitment.agent_id.in_(agent_ids) if agent_ids else True,
-            Commitment.status == "reserved",
-        )
-        .scalar()
-    )
-
-    # Settled transactions
-    settled_sum = (
-        db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
-        .filter(
-            Transaction.agent_id.in_(agent_ids) if agent_ids else True,
-            Transaction.status == "completed",
-        )
-        .scalar()
-    )
-
-    # Recent transactions
-    txs = (
-        db.query(Transaction)
-        .filter(Transaction.agent_id.in_(agent_ids) if agent_ids else True)
-        .order_by(Transaction.created_at.desc())
-        .limit(5)
-        .all()
-    )
-
-    # Recent audit events
-    audit_logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(6).all()
 
     return DashboardStatsResponse(
         total_agents=total_agents,

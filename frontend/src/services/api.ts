@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const resolveBaseUrl = (): string => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
@@ -27,19 +27,86 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: Handle 401 session expiry and token invalidation
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response interceptor: Handle 401 via silent token refresh before forcing logout
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    const isLoginOrRegister =
-      window.location.pathname.includes('/login') ||
-      window.location.pathname.includes('/register');
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const reqUrl = originalRequest?.url || '';
+    const isAuthEndpoint =
+      reqUrl.includes('/auth/login') ||
+      reqUrl.includes('/auth/register') ||
+      reqUrl.includes('/auth/refresh');
 
-    if (error.response?.status === 401 && !isLoginOrRegister) {
-      localStorage.removeItem('agentpass_token');
-      localStorage.removeItem('agentpass_user');
-      window.location.href = '/login';
+    if (error.response?.status === 401 && !isAuthEndpoint && originalRequest && !originalRequest._retry) {
+      const refreshToken = localStorage.getItem('agentpass_refresh_token');
+      if (refreshToken) {
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then((newToken) => {
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              }
+              return api(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+          const refreshRes = await axios.post(`${resolveBaseUrl()}/auth/refresh`, {
+            refresh_token: refreshToken,
+          });
+          const { access_token, refresh_token: nextRefresh } = refreshRes.data;
+          localStorage.setItem('agentpass_token', access_token);
+          if (nextRefresh) {
+            localStorage.setItem('agentpass_refresh_token', nextRefresh);
+          }
+          processQueue(null, access_token);
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          }
+          return api(originalRequest);
+        } catch (refreshError) {
+          processQueue(refreshError, null);
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
+      const isLoginOrRegister =
+        window.location.pathname.includes('/login') ||
+        window.location.pathname.includes('/register');
+
+      if (!isLoginOrRegister) {
+        localStorage.removeItem('agentpass_token');
+        localStorage.removeItem('agentpass_refresh_token');
+        localStorage.removeItem('agentpass_user');
+        window.location.href = '/login';
+      }
     }
+
     return Promise.reject(error);
   }
 );

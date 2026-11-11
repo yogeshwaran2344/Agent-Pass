@@ -3,8 +3,10 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models.intent import UserIntent
+from app.models.user import User
 from app.schemas.intent import (
     IntentCreate,
     IntentEvaluateRequest,
@@ -18,14 +20,16 @@ router = APIRouter(prefix="/intents", tags=["Intent Consistency Engine"])
 
 @router.post("/", response_model=IntentRead, status_code=status.HTTP_201_CREATED)
 def create_user_intent(
-    intent_in: IntentCreate, user_id: str = "master_user", db: Session = Depends(get_db)
+    intent_in: IntentCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    # Auto-extract structured constraints if not explicitly passed
+    """Register and parse a master user intent for the authenticated user."""
     extracted = IntentConsistencyEngine.extract_intent_structure(intent_in.raw_prompt)
 
     intent = UserIntent(
         id=str(uuid.uuid4()),
-        user_id=user_id,
+        user_id=current_user.id,
         raw_prompt=intent_in.raw_prompt,
         primary_goal=intent_in.primary_goal or extracted["primary_goal"],
         target_category=intent_in.target_category,
@@ -41,12 +45,35 @@ def create_user_intent(
 
 
 @router.get("/", response_model=list[IntentRead])
-def list_user_intents(db: Session = Depends(get_db)):
-    return db.query(UserIntent).filter(UserIntent.is_active == True).all()
+def list_user_intents(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """List active master intents belonging to the authenticated user."""
+    return (
+        db.query(UserIntent)
+        .filter(UserIntent.user_id == current_user.id, UserIntent.is_active == True)
+        .order_by(UserIntent.created_at.desc())
+        .all()
+    )
 
 
 @router.post("/evaluate", response_model=IntentEvaluateResponse)
-def evaluate_intent(req: IntentEvaluateRequest, db: Session = Depends(get_db)):
+def evaluate_intent(
+    req: IntentEvaluateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Evaluate a proposed item against an authenticated user's master intent."""
+    intent = (
+        db.query(UserIntent)
+        .filter(UserIntent.id == req.intent_id, UserIntent.user_id == current_user.id)
+        .first()
+    )
+    if not intent:
+        raise HTTPException(
+            status_code=404, detail=f"UserIntent with id '{req.intent_id}' not found."
+        )
+
     try:
         evaluation = IntentConsistencyEngine.evaluate_intent_consistency(
             db=db,

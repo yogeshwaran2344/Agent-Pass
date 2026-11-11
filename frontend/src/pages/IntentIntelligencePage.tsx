@@ -5,19 +5,18 @@ import {
   AlertOctagon,
   CheckCircle2,
   AlertTriangle,
-  Send,
-  HelpCircle,
-  ArrowRight,
-  ShieldAlert,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
-import { UserIntent, IntentEvaluation } from '../types';
-import { intentService } from '../services';
+import { Agent, UserIntent, IntentEvaluation } from '../types';
+import { agentService, intentService } from '../services';
+import { getErrorMessage } from '../services/api';
 
 export const IntentIntelligencePage: React.FC = () => {
   const [intents, setIntents] = useState<UserIntent[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [selectedIntent, setSelectedIntent] = useState<UserIntent | null>(null);
   const [rawPrompt, setRawPrompt] = useState(
     "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000."
@@ -27,52 +26,83 @@ export const IntentIntelligencePage: React.FC = () => {
   const [itemName, setItemName] = useState('Asus ROG Zephyrus 14" RTX 4070 Gaming Laptop');
   const [merchant, setMerchant] = useState('BestBuy');
   const [price, setPrice] = useState('899');
+  const [itemSpecs, setItemSpecs] = useState<Record<string, any>>({
+    category: 'Gaming Laptops',
+    gpu: 'RTX 4070',
+  });
   const [evaluation, setEvaluation] = useState<IntentEvaluation | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Load existing user intents
-  const fetchIntents = async () => {
+  const fetchInitialData = async () => {
     try {
-      const data = await intentService.listIntents();
-      setIntents(data);
-      if (data.length > 0 && !selectedIntent) {
-        setSelectedIntent(data[0]);
+      const [intentData, agentData] = await Promise.all([
+        intentService.listIntents(),
+        agentService.listAgents(),
+      ]);
+      setIntents(intentData);
+      setAgents(agentData);
+      if (intentData.length > 0 && !selectedIntent) {
+        setSelectedIntent(intentData[0]);
+      }
+      if (agentData.length > 0 && !selectedAgentId) {
+        setSelectedAgentId(agentData[0].id);
       }
     } catch (err) {
-      console.error('Failed to load user intents', err);
+      console.error('Failed to load initial intent data', err);
     }
   };
 
   useEffect(() => {
-    fetchIntents();
+    fetchInitialData();
   }, []);
 
-  const handleRegisterPrompt = async () => {
+  const handleRegisterPrompt = async (): Promise<UserIntent | null> => {
+    setStatusMessage(null);
+    setIsSaving(true);
     try {
       const data = await intentService.createIntent({ raw_prompt: rawPrompt });
-      fetchIntents();
+      const updated = await intentService.listIntents();
+      setIntents(updated);
       setSelectedIntent(data);
-      alert('Master User Instruction registered in AGENTPASS intent memory!');
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to register intent');
+      setStatusMessage({
+        type: 'success',
+        text: 'Master User Instruction registered and constraints extracted into AGENTPASS intent memory.',
+      });
+      return data;
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: getErrorMessage(err) });
+      return null;
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleEvaluatePurchase = async () => {
-    if (!selectedIntent) return;
+    setStatusMessage(null);
     setIsEvaluating(true);
     try {
+      let targetIntent = selectedIntent;
+      if (!targetIntent) {
+        targetIntent = await handleRegisterPrompt();
+        if (!targetIntent) {
+          setIsEvaluating(false);
+          return;
+        }
+      }
+
       const data = await intentService.evaluateIntent({
-        intent_id: selectedIntent.id,
-        agent_id: 'ag_procurement_99',
+        intent_id: targetIntent.id,
+        agent_id: selectedAgentId || 'simulator_agent',
         proposed_item_name: itemName,
         proposed_merchant: merchant,
         proposed_price: parseFloat(price) || 0,
-        proposed_item_specs: { category: 'Gaming Laptops', gpu: 'RTX 4070' },
+        proposed_item_specs: itemSpecs,
       });
       setEvaluation(data);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Evaluation failed');
+    } catch (err) {
+      setStatusMessage({ type: 'error', text: getErrorMessage(err) });
     } finally {
       setIsEvaluating(false);
     }
@@ -97,6 +127,23 @@ export const IntentIntelligencePage: React.FC = () => {
           </span>
         </p>
       </div>
+
+      {statusMessage && (
+        <div
+          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
+            statusMessage.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          }`}
+        >
+          {statusMessage.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+          )}
+          <span>{statusMessage.text}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Step 1: Register Master Intent */}
@@ -123,9 +170,32 @@ export const IntentIntelligencePage: React.FC = () => {
                 className="w-full"
                 leftIcon={<Sparkles className="w-4 h-4" />}
                 onClick={handleRegisterPrompt}
+                isLoading={isSaving}
               >
                 Save & Extract Intent Constraints
               </Button>
+
+              {intents.length > 0 && (
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                    Active Stored Master Intents ({intents.length})
+                  </label>
+                  <select
+                    value={selectedIntent?.id || ''}
+                    onChange={(e) => {
+                      const found = intents.find((item) => item.id === e.target.value);
+                      if (found) setSelectedIntent(found);
+                    }}
+                    className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-xs text-white"
+                  >
+                    {intents.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.raw_prompt.slice(0, 70)}...
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {selectedIntent && (
                 <div className="p-4 rounded-xl bg-surface/80 border border-surface-border space-y-3 text-xs">
@@ -136,21 +206,29 @@ export const IntentIntelligencePage: React.FC = () => {
                   <div>
                     <span className="text-slate-400 block text-[11px]">Positive Priorities:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedIntent.positive_constraints?.map((c, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                          + {c}
-                        </span>
-                      ))}
+                      {selectedIntent.positive_constraints?.length ? (
+                        selectedIntent.positive_constraints.map((c, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                            + {c}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-slate-500 italic">None extracted</span>
+                      )}
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Negative Constraints (Hard Blocks):</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedIntent.negative_constraints?.map((c, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/30 font-bold">
-                          &times; {c}
-                        </span>
-                      ))}
+                      {selectedIntent.negative_constraints?.length ? (
+                        selectedIntent.negative_constraints.map((c, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/30 font-bold">
+                            &times; {c}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-slate-500 italic">None extracted</span>
+                      )}
                     </div>
                   </div>
                   {selectedIntent.max_acceptable_budget && (
@@ -174,13 +252,33 @@ export const IntentIntelligencePage: React.FC = () => {
             subtitle="Simulate what an autonomous agent chooses from an e-commerce catalog"
           >
             <div className="space-y-4">
+              {agents.length > 0 && (
+                <div className="text-xs">
+                  <label className="block text-slate-400 font-medium mb-1">Target Agent</label>
+                  <select
+                    value={selectedAgentId}
+                    onChange={(e) => setSelectedAgentId(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white"
+                  >
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} ({a.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
                   <label className="block text-slate-400 font-medium mb-1">Item Title / Description</label>
                   <input
                     type="text"
                     value={itemName}
-                    onChange={(e) => setItemName(e.target.value)}
+                    onChange={(e) => {
+                      setItemName(e.target.value);
+                      setItemSpecs({});
+                    }}
                     className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white font-medium"
                   />
                 </div>
@@ -197,25 +295,35 @@ export const IntentIntelligencePage: React.FC = () => {
 
               <div className="text-xs">
                 <label className="block text-slate-400 font-medium mb-1">Proposed Price ($ USD)</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                   <input
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    className="w-48 px-3 py-2 bg-surface border border-surface-border rounded-lg text-white font-mono font-bold"
+                    className="w-40 px-3 py-2 bg-surface border border-surface-border rounded-lg text-white font-mono font-bold"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setItemName('Asus ROG Zephyrus 14" RTX 4070 Gaming Laptop')}
-                      className="text-[11px] px-2.5 py-1 rounded bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20"
+                      onClick={() => {
+                        setItemName('Asus ROG Zephyrus 14" RTX 4070 Gaming Laptop');
+                        setMerchant('BestBuy');
+                        setPrice('899');
+                        setItemSpecs({ category: 'Gaming Laptops', gpu: 'RTX 4070' });
+                      }}
+                      className="text-[11px] px-2.5 py-1.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20"
                     >
                       Preset: Gaming Laptop (Conflict)
                     </button>
                     <button
                       type="button"
-                      onClick={() => setItemName('Apple MacBook Air 13" M3 16GB 18-hr Battery')}
-                      className="text-[11px] px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20"
+                      onClick={() => {
+                        setItemName('Apple MacBook Air 13" M3 16GB 18-hr Battery');
+                        setMerchant('Apple Store');
+                        setPrice('949');
+                        setItemSpecs({ category: 'Ultrabook', battery_hours: 18, weight: '2.7 lbs' });
+                      }}
+                      className="text-[11px] px-2.5 py-1.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20"
                     >
                       Preset: Ultrabook (Match)
                     </button>
@@ -258,11 +366,12 @@ export const IntentIntelligencePage: React.FC = () => {
               className={
                 evaluation.decision === 'HARD_CONFLICT'
                   ? 'border-rose-500/50 bg-rose-950/15'
+                  : evaluation.decision === 'DRIFT'
+                  ? 'border-amber-500/50 bg-amber-950/15'
                   : 'border-emerald-500/50 bg-emerald-950/15'
               }
             >
               <div className="space-y-4">
-                {/* Score Gauge */}
                 <div className="p-4 rounded-xl bg-surface/80 border border-surface-border flex items-center justify-between">
                   <div>
                     <span className="text-xs text-slate-400 block">Semantic Consistency Score</span>
@@ -282,7 +391,6 @@ export const IntentIntelligencePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Conflicting requirements */}
                 {evaluation.conflicting_requirements?.length > 0 && (
                   <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 space-y-2">
                     <div className="font-bold flex items-center gap-1.5 text-rose-400">
@@ -297,7 +405,6 @@ export const IntentIntelligencePage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Detailed Natural Language Reasoning */}
                 <div className="p-4 rounded-xl bg-surface/80 border border-surface-border text-xs leading-relaxed">
                   <span className="font-semibold text-slate-300 block mb-1">Governance Engine Reasoning:</span>
                   <p className="text-slate-300 font-mono text-[11px]">{evaluation.reasoning}</p>

@@ -1,47 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, Lock, Mail, User, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Mail, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { useAuthStore } from '../store/useAuthStore';
-import api from '../services/api';
+import api, { getErrorMessage } from '../services/api';
 
 export const RegisterPage: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState('agent_operator');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuthStore();
+  const { login, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       // 1. Register user
       await api.post('/auth/register', {
-        email,
+        email: email.trim(),
         password,
-        full_name: fullName,
+        full_name: fullName.trim(),
         role,
       });
 
       // 2. Auto login
-      const loginRes = await api.post('/auth/login', { email, password });
-      const { access_token } = loginRes.data;
+      const loginRes = await api.post('/auth/login', {
+        email: email.trim(),
+        password,
+      });
+      const { access_token, refresh_token } = loginRes.data;
 
       const userRes = await api.get('/users/me', {
         headers: { Authorization: `Bearer ${access_token}` },
       });
 
-      login(access_token, userRes.data);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      login(access_token, userRes.data, refresh_token);
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +110,7 @@ export const RegisterPage: React.FC = () => {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="sarah@company.com"
@@ -121,12 +139,40 @@ export const RegisterPage: React.FC = () => {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   minLength={8}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
+                  className="w-full pl-10 pr-10 py-2 bg-surface/80 border border-surface-border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Confirm Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat password"
                   className="w-full pl-10 pr-4 py-2 bg-surface/80 border border-surface-border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
                 />
               </div>

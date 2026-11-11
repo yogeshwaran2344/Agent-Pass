@@ -32,15 +32,15 @@ def create_approval_request(appr_in: ApprovalCreate, db: Session = Depends(get_d
 
     # Emit real-time Notification to owner
     agent = db.query(Agent).filter(Agent.id == appr_in.agent_id).first()
-    owner_id = agent.owner_id if agent else "system"
-    notif = Notification(
-        id=str(uuid.uuid4()),
-        user_id=owner_id,
-        title="Human Approval Required",
-        message=f"Agent '{agent.name if agent else 'Autonomous Agent'}' requested approval for ${appr_in.amount:.2f} at {appr_in.merchant_name}: {appr_in.reason_for_approval}",
-        notification_type="APPROVAL_REQUIRED",
-    )
-    db.add(notif)
+    if agent and agent.owner_id:
+        notif = Notification(
+            id=str(uuid.uuid4()),
+            user_id=agent.owner_id,
+            title="Human Approval Required",
+            message=f"Agent '{agent.name}' requested approval for ${appr_in.amount:.2f} at {appr_in.merchant_name}: {appr_in.reason_for_approval}",
+            notification_type="APPROVAL_REQUIRED",
+        )
+        db.add(notif)
 
     db.commit()
     db.refresh(req)

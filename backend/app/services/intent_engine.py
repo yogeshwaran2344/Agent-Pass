@@ -129,7 +129,9 @@ class IntentConsistencyEngine:
                 f'"{intent.raw_prompt}". No negative constraint violations detected.'
             )
 
-        # 4. Save evaluation to database
+        # 4. Save evaluation to database when agent exists (avoid FK error in UI simulation mode)
+        from app.models.agent import Agent
+
         evaluation = IntentEvaluation(
             id=str(uuid.uuid4()),
             intent_id=intent.id,
@@ -144,8 +146,10 @@ class IntentConsistencyEngine:
             conflicting_requirements=conflicts,
             reasoning=reasoning,
         )
-        db.add(evaluation)
-        db.commit()
-        db.refresh(evaluation)
+        agent_exists = db.query(Agent.id).filter(Agent.id == agent_id).first() is not None
+        if agent_exists:
+            db.add(evaluation)
+            db.commit()
+            db.refresh(evaluation)
 
         return evaluation

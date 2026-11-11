@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.agent import Agent
 from app.models.risk import RiskAssessment
 
 router = APIRouter(prefix="/risk", tags=["Risk Engine"])
@@ -46,20 +47,25 @@ def evaluate_risk(req: RiskCheckRequest, db: Session = Depends(get_db)):
     elif score >= 0.3:
         level = "MEDIUM"
 
-    assessment = RiskAssessment(
-        id=str(uuid.uuid4()),
-        agent_id=req.agent_id,
-        overall_risk_score=score,
-        risk_level=level,
-        triggered_rules=rules_triggered,
-        explanation=f"Evaluated with {len(rules_triggered)} risk signals.",
-    )
-    db.add(assessment)
-    db.commit()
+    explanation = f"Evaluated with {len(rules_triggered)} risk signals."
+
+    # Persist risk assessment only when referencing an actual registered agent (safe for UI simulator)
+    agent_exists = db.query(Agent.id).filter(Agent.id == req.agent_id).first() is not None
+    if agent_exists:
+        assessment = RiskAssessment(
+            id=str(uuid.uuid4()),
+            agent_id=req.agent_id,
+            overall_risk_score=score,
+            risk_level=level,
+            triggered_rules=rules_triggered,
+            explanation=explanation,
+        )
+        db.add(assessment)
+        db.commit()
 
     return RiskCheckResponse(
         overall_risk_score=score,
         risk_level=level,
         triggered_rules=rules_triggered,
-        explanation=assessment.explanation,
+        explanation=explanation,
     )

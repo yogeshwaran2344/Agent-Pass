@@ -1,57 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
-  AlertTriangle,
   Flame,
   CheckCircle2,
-  Lock,
-  RotateCcw,
-  Shield,
-  Activity,
-  History,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
-import { emergencyService } from '../services';
+import { Agent, AuditLogItem } from '../types';
+import { agentService, auditService, emergencyService } from '../services';
+import { getErrorMessage } from '../services/api';
 
 export const SecurityCenterPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [killReason, setKillReason] = useState('Unusual autonomous spending anomaly detected');
   const [killScope, setKillScope] = useState<'agent' | 'delegation_tree' | 'global'>('global');
+  const [targetAgentId, setTargetAgentId] = useState<string>('');
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [auditEvents, setAuditEvents] = useState<AuditLogItem[]>([]);
   const [isTriggering, setIsTriggering] = useState(false);
+  const [banner, setBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [status, setStatus] = useState<any>({
     global_kill_active: false,
     suspended_agents_count: 0,
     revoked_agents_count: 0,
-    pending_approvals_count: 1,
+    pending_approvals_count: 0,
   });
 
-  const fetchStatus = async () => {
+  const fetchSecurityData = async () => {
     try {
-      const data = await emergencyService.getStatus();
-      setStatus(data);
+      const [statusData, agentData, auditData] = await Promise.all([
+        emergencyService.getStatus(),
+        agentService.listAgents(),
+        auditService.getAuditLogs(),
+      ]);
+      setStatus(statusData);
+      setAgents(agentData);
+      setAuditEvents(auditData.slice(0, 8));
+      if (agentData.length > 0 && !targetAgentId) {
+        setTargetAgentId(agentData[0].id);
+      }
     } catch (err) {
-      console.error('Failed to load emergency status', err);
+      console.error('Failed to load security center data', err);
     }
   };
 
   useEffect(() => {
-    fetchStatus();
+    fetchSecurityData();
   }, []);
 
   const handleTriggerKillSwitch = async () => {
+    if (killScope !== 'global' && !targetAgentId) {
+      setBanner({ type: 'error', text: 'Please select a target AI agent for scoped revocation.' });
+      return;
+    }
+
     setIsTriggering(true);
+    setBanner(null);
     try {
-      await emergencyService.triggerKillSwitch({
+      const res = await emergencyService.triggerKillSwitch({
         scope: killScope,
+        agent_id: killScope === 'global' ? undefined : targetAgentId,
         reason: killReason,
       });
-      alert(`EMERGENCY KILL SWITCH TRIGGERED: Scope [${killScope.toUpperCase()}]. Financial permissions revoked.`);
+      setBanner({
+        type: 'success',
+        text: `EMERGENCY KILL SWITCH TRIGGERED (${killScope.toUpperCase()}). ${res.terminated_agents_count} agent(s) terminated.`,
+      });
       setIsModalOpen(false);
-      fetchStatus();
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to trigger kill switch');
+      await fetchSecurityData();
+    } catch (err) {
+      setBanner({ type: 'error', text: getErrorMessage(err) });
     } finally {
       setIsTriggering(false);
     }
@@ -70,6 +90,23 @@ export const SecurityCenterPage: React.FC = () => {
           Immediate zero-latency revocation of financial authorization across rogue agents, delegation sub-trees, or global platform.
         </p>
       </div>
+
+      {banner && (
+        <div
+          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
+            banner.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          }`}
+        >
+          {banner.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+          )}
+          <span>{banner.text}</span>
+        </div>
+      )}
 
       {/* Main Red Alert Card: Emergency Kill Switch */}
       <div className="p-8 rounded-2xl border-2 border-rose-500/50 bg-gradient-to-r from-rose-950/40 via-surface-card to-surface-card shadow-alert backdrop-blur-xl space-y-6">
@@ -124,38 +161,35 @@ export const SecurityCenterPage: React.FC = () => {
       </div>
 
       {/* Incident History & Security Logs */}
-      <Card title="Security Incidents & Circuit Breaker Events" subtitle="Forensic audit trail of all emergency actions">
+      <Card title="Security Incidents & Circuit Breaker Events" subtitle="Live forensic audit trail of emergency and governance events">
         <div className="space-y-3">
-          {[
-            {
-              time: '10 min ago',
-              type: 'INTENT_ANOMALY',
-              severity: 'HIGH',
-              detail: 'Gaming laptop selected on college budget prompt. Blocked automatically.',
-            },
-            {
-              time: 'Yesterday',
-              type: 'VELOCITY_BURST_FLAG',
-              severity: 'MEDIUM',
-              detail: 'Agent attempted 4 transactions in 3 minutes. Throttled to 1 tx/hr.',
-            },
-            {
-              time: '3 days ago',
-              type: 'KEY_ROTATION',
-              severity: 'LOW',
-              detail: 'Operator regenerated primary API key for ProcurementBot-Alpha.',
-            },
-          ].map((inc, i) => (
-            <div key={i} className="flex items-center justify-between p-3.5 rounded-xl bg-surface border border-surface-border text-xs">
-              <div className="flex items-center gap-3">
-                <Badge variant={inc.severity === 'HIGH' ? 'danger' : inc.severity === 'MEDIUM' ? 'warning' : 'info'}>
-                  {inc.type}
-                </Badge>
-                <span className="text-slate-200">{inc.detail}</span>
-              </div>
-              <span className="text-slate-500 font-mono text-[11px]">{inc.time}</span>
+          {auditEvents.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-500">
+              No security or circuit breaker events logged yet.
             </div>
-          ))}
+          ) : (
+            auditEvents.map((ev) => (
+              <div key={ev.id} className="flex items-center justify-between p-3.5 rounded-xl bg-surface border border-surface-border text-xs gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Badge
+                    variant={
+                      ev.action.includes('KILL') || ev.action.includes('REVOK')
+                        ? 'danger'
+                        : ev.action.includes('SUSPEND')
+                        ? 'warning'
+                        : 'info'
+                    }
+                  >
+                    {ev.action}
+                  </Badge>
+                  <span className="text-slate-200 truncate">{ev.description || ev.entity_id}</span>
+                </div>
+                <span className="text-slate-500 font-mono text-[11px] shrink-0">
+                  {ev.created_at ? new Date(ev.created_at).toLocaleString() : 'Recent'}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </Card>
 
@@ -187,6 +221,29 @@ export const SecurityCenterPage: React.FC = () => {
                   <option value="agent">Single Rogue Agent</option>
                 </select>
               </div>
+
+              {killScope !== 'global' && (
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">Target Agent</label>
+                  {agents.length === 0 ? (
+                    <div className="p-2 rounded bg-surface border border-surface-border text-slate-400">
+                      No agents registered yet.
+                    </div>
+                  ) : (
+                    <select
+                      value={targetAgentId}
+                      onChange={(e) => setTargetAgentId(e.target.value)}
+                      className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white"
+                    >
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.status})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-slate-300 font-medium mb-1">Reason for Emergency Halt</label>

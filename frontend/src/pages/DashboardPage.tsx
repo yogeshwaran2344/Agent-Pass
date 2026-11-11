@@ -26,6 +26,7 @@ export const DashboardPage: React.FC = () => {
   // Live Intent simulation state
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<any>(null);
+  const [simulationError, setSimulationError] = useState<string | null>(null);
 
   const fetchDashboardStats = async () => {
     setIsLoading(true);
@@ -45,6 +46,7 @@ export const DashboardPage: React.FC = () => {
 
   const runIntentSimulation = async () => {
     setIsSimulating(true);
+    setSimulationError(null);
     try {
       // 1. Create or retrieve intent
       const intent = await intentService.createIntent({
@@ -54,7 +56,7 @@ export const DashboardPage: React.FC = () => {
       // 2. Evaluate purchase proposal through backend Intent Engine
       const res = await intentService.evaluateIntent({
         intent_id: intent.id,
-        agent_id: stats?.recent_transactions[0]?.agent_id || 'ag_procurement_99',
+        agent_id: stats?.recent_transactions[0]?.agent_id || 'simulator_agent',
         proposed_item_name: 'Asus ROG Zephyrus 14" RTX 4070 Gaming Laptop',
         proposed_merchant: 'BestBuy',
         proposed_price: 999.0,
@@ -74,7 +76,7 @@ export const DashboardPage: React.FC = () => {
 
       fetchDashboardStats();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Intent evaluation failed');
+      setSimulationError(err.response?.data?.detail || 'Intent evaluation failed');
     } finally {
       setIsSimulating(false);
     }
@@ -185,6 +187,13 @@ export const DashboardPage: React.FC = () => {
               "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000."
             </div>
           </div>
+
+          {simulationError && (
+            <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{simulationError}</span>
+            </div>
+          )}
 
           {simulationResult && (
             <div className="p-5 rounded-xl border border-rose-500/40 bg-rose-950/20 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
