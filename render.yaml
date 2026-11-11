@@ -10,7 +10,7 @@ databases:
     user: agentpass
     plan: free
     region: oregon
-    postgresMajorVersion: 16
+    postgresMajorVersion: "16"
 
 services:
   # ----------------------------------------------------------------------------
@@ -18,7 +18,7 @@ services:
   # ----------------------------------------------------------------------------
   - type: web
     name: agentpass-backend
-    env: python
+    runtime: python
     region: oregon
     plan: free
     rootDir: backend
@@ -29,7 +29,7 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: DEBUG
-        value: false
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
           name: agentpass-postgres
@@ -39,7 +39,7 @@ services:
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: 1440
+        value: "1440"
       - key: PAYPAL_API_BASE
         value: https://api-m.sandbox.paypal.com
       - key: PAYPAL_CLIENT_ID
@@ -54,10 +54,9 @@ services:
   # ----------------------------------------------------------------------------
   # 2. React Vite Frontend Static Site
   # ----------------------------------------------------------------------------
-  - type: static
+  - type: web
     name: agentpass-frontend
-    region: oregon
-    plan: free
+    runtime: static
     rootDir: frontend
     buildCommand: "npm install && npm run build"
     staticPublishPath: dist
