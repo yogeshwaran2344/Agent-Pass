@@ -45,13 +45,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
   ];
 
   return (
-    <aside className="hidden md:flex w-60 bg-white border-r border-slate-200 flex-col h-screen sticky top-0 z-30 select-none">
+    <aside className="hidden md:flex w-60 bg-[#0F1E36] border-r border-[#1E3354] flex-col h-screen sticky top-0 z-30 select-none">
       {/* Brand Header */}
-      <div className="h-14 flex items-center px-5 border-b border-slate-200 gap-2.5">
+      <div className="h-14 flex items-center px-5 border-b border-[#1E3354] gap-2.5">
         <BrandMark className="w-7 h-7" />
         <div className="flex items-baseline gap-1.5">
-          <span className="font-bold text-sm tracking-tight text-slate-900">AgentPass</span>
-          <span className="text-[10px] font-mono text-slate-400">sandbox</span>
+          <span className="font-bold text-sm tracking-tight text-white">AgentPass</span>
+          <span className="text-[10px] font-mono text-blue-300/80">sandbox</span>
         </div>
       </div>
 
@@ -65,8 +65,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
               clsx(
                 'group flex items-center justify-between px-3 py-2 text-[13px] font-medium rounded-md transition-colors',
                 isActive
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-white/10'
               )
             }
           >
@@ -76,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
                   <item.icon
                     className={clsx(
                       'w-4 h-4',
-                      isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'
+                      isActive ? 'text-white' : 'text-blue-300/70 group-hover:text-white'
                     )}
                   />
                   <span>{item.name}</span>
@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
                       'text-[11px] font-mono font-semibold px-1.5 py-0.2 rounded',
                       isActive
                         ? 'bg-white/20 text-white'
-                        : 'bg-amber-100 text-amber-800'
+                        : 'bg-amber-400 text-[#0F1E36]'
                     )}
                   >
                     {item.count}
@@ -100,21 +100,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ pendingApprovalsCount = 0 }) =
       </nav>
 
       {/* User Footer */}
-      <div className="p-3.5 border-t border-slate-200 bg-slate-50/70">
+      <div className="p-3.5 border-t border-[#1E3354] bg-[#0B1629]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-xs font-semibold text-white shrink-0">
+            <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-xs font-semibold text-white shrink-0">
               {user?.full_name ? user.full_name[0].toUpperCase() : 'U'}
             </div>
             <div className="truncate text-xs">
-              <div className="font-medium text-slate-900 truncate">{user?.full_name || 'Operator'}</div>
-              <div className="text-slate-500 text-[11px] truncate">{user?.email}</div>
+              <div className="font-medium text-white truncate">{user?.full_name || 'Operator'}</div>
+              <div className="text-slate-400 text-[11px] truncate">{user?.email}</div>
             </div>
           </div>
           <button
             onClick={() => logout()}
             title="Sign out"
-            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors shrink-0"
+            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors shrink-0"
           >
             <LogOut className="w-4 h-4" />
           </button>

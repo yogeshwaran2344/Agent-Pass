@@ -188,7 +188,7 @@ export const AnalyticsPage: React.FC = () => {
                     color: '#0F172A',
                   }}
                 />
-                <Bar dataKey="count" fill="#0F172A" radius={[4, 4, 0, 0]} name="Events" />
+                <Bar dataKey="count" fill="#2563EB" radius={[4, 4, 0, 0]} name="Events" />
               </BarChart>
             </ResponsiveContainer>
           </div>

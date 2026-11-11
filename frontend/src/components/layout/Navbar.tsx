@@ -157,7 +157,7 @@ export const Navbar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 bg-slate-50 text-slate-700 text-xs font-medium">
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-blue-200 bg-blue-50 text-[#003087] text-xs font-medium">
           <span
             className={`w-1.5 h-1.5 rounded-full ${
               paypalMode === 'live_sandbox' ? 'bg-emerald-600' : 'bg-amber-500'
@@ -177,7 +177,7 @@ export const Navbar: React.FC = () => {
           >
             <Bell className="w-4 h-4" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-slate-900 text-white rounded-full text-[10px] font-semibold">
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-blue-700 text-white rounded-full text-[10px] font-semibold">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}

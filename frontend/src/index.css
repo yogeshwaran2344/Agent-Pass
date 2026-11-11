@@ -4,12 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased min-h-screen overflow-x-hidden;
+    @apply bg-[#F4F7FB] text-slate-900 font-sans antialiased min-h-screen overflow-x-hidden;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   input, select, textarea {
-    @apply focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 outline-none transition-colors;
+    @apply focus:ring-2 focus:ring-blue-600/15 focus:border-blue-600 outline-none transition-colors;
   }
 }
 
@@ -17,13 +17,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Subtle institutional scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F8FAFC;
+  background: #F4F7FB;
 }
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;

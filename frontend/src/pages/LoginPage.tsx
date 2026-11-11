@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { BrandMark } from '../components/common/BrandMark';
 import { useAuthStore } from '../store/useAuthStore';
@@ -80,92 +80,132 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link to="/" className="inline-flex items-center gap-2 mb-5">
-          <BrandMark className="w-8 h-8" />
-          <span className="font-bold text-lg tracking-tight text-slate-900">AgentPass</span>
-        </Link>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900">Sign in to your account</h2>
-        <p className="mt-1 text-xs text-slate-500">Access agent spending controls and PayPal settlements</p>
+    <div className="min-h-screen bg-[#F4F7FB] flex">
+      {/* Left Brand Panel (Desktop) */}
+      <div className="hidden lg:flex lg:w-[440px] xl:w-[480px] bg-[#0F1E36] text-white flex-col justify-between p-10 border-r border-[#1E3354]">
+        <div>
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <BrandMark className="w-8 h-8" />
+            <span className="font-bold text-lg tracking-tight">AgentPass</span>
+          </Link>
+
+          <h1 className="mt-12 text-3xl font-bold tracking-tight leading-snug">
+            Intent-verified financial controls for autonomous agents.
+          </h1>
+          <p className="mt-3 text-sm text-slate-300 leading-relaxed">
+            Keep every agent within policy limits, catch semantic intent conflicts before checkout, and settle safely over PayPal Sandbox.
+          </p>
+
+          <ul className="mt-8 space-y-3.5 text-xs text-slate-200">
+            <li className="flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>Deterministic per-transaction, daily, and merchant guardrails</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>Two-phase budget reservations and delegation invariance</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>Live PayPal Sandbox checkout &amp; webhook settlement</span>
+            </li>
+          </ul>
+        </div>
+
+        <div className="text-xs text-slate-400 font-mono">
+          PayPal Sandbox · Argon2id · Audit Chained
+        </div>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white border border-slate-200 py-7 px-6 sm:px-8 rounded-lg shadow-card">
-          {error && (
-            <div className="mb-5 p-3 rounded-md bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-700">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Email address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full pl-9 pr-9 py-2 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-              Sign in
-            </Button>
-          </form>
-
-          <div className="mt-4 pt-4 border-t border-slate-200">
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full"
-              onClick={handleDemoSignIn}
-              isLoading={isDemoLoading}
-            >
-              Continue with Demo Account
-            </Button>
+      {/* Right Sign-In Form */}
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="lg:hidden mb-6 text-center">
+            <Link to="/" className="inline-flex items-center gap-2">
+              <BrandMark className="w-8 h-8" />
+              <span className="font-bold text-lg tracking-tight text-slate-900">AgentPass</span>
+            </Link>
           </div>
 
-          <div className="mt-5 text-center text-xs text-slate-500">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="font-semibold text-slate-900 hover:underline">
-              Create account
-            </Link>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Sign in to your account</h2>
+          <p className="mt-1 text-xs text-slate-500">Enter your operator credentials to access the console</p>
+
+          <div className="mt-6 bg-white border border-slate-200 py-7 px-6 sm:px-8 rounded-lg shadow-card">
+            {error && (
+              <div className="mb-5 p-3 rounded-md bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-700">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Email address</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@company.com"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full pl-9 pr-9 py-2 bg-white border border-slate-300 rounded-md text-sm text-slate-900 placeholder-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
+                Sign in
+              </Button>
+            </form>
+
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={handleDemoSignIn}
+                isLoading={isDemoLoading}
+              >
+                Continue with Demo Account
+              </Button>
+            </div>
+
+            <div className="mt-5 text-center text-xs text-slate-500">
+              Don&apos;t have an account?{' '}
+              <Link to="/register" className="font-semibold text-blue-700 hover:underline">
+                Create account
+              </Link>
+            </div>
           </div>
         </div>
       </div>

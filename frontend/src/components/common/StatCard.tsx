@@ -25,23 +25,41 @@ export const StatCard: React.FC<StatCardProps> = ({
   className,
 }) => {
   const accents = {
-    indigo: 'bg-slate-100 text-slate-700 border-slate-200',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    rose: 'bg-red-50 text-red-700 border-red-200',
-    sky: 'bg-blue-50 text-blue-700 border-blue-200',
+    indigo: {
+      icon: 'bg-blue-50 text-blue-700 border-blue-200',
+      topBorder: 'border-t-blue-600',
+    },
+    emerald: {
+      icon: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      topBorder: 'border-t-emerald-600',
+    },
+    amber: {
+      icon: 'bg-amber-50 text-amber-700 border-amber-200',
+      topBorder: 'border-t-amber-500',
+    },
+    rose: {
+      icon: 'bg-red-50 text-red-700 border-red-200',
+      topBorder: 'border-t-red-600',
+    },
+    sky: {
+      icon: 'bg-teal-50 text-teal-700 border-teal-200',
+      topBorder: 'border-t-teal-600',
+    },
   };
+
+  const theme = accents[accentColor];
 
   return (
     <div
       className={clsx(
-        'p-5 rounded-lg border border-slate-200 bg-white shadow-card',
+        'p-5 rounded-lg border border-slate-200 border-t-2 bg-white shadow-card',
+        theme.topBorder,
         className
       )}
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-slate-500">{title}</span>
-        <div className={clsx('p-2 rounded-md border', accents[accentColor])}>
+        <div className={clsx('p-2 rounded-md border', theme.icon)}>
           <Icon className="w-4 h-4" />
         </div>
       </div>

@@ -35,9 +35,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-slate-900 hover:bg-slate-800 text-white border border-slate-900 shadow-subtle focus:ring-slate-900',
+      'bg-blue-700 hover:bg-blue-800 text-white border border-blue-700 shadow-subtle focus:ring-blue-600',
     secondary:
-      'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-subtle focus:ring-slate-400',
+      'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-subtle focus:ring-blue-500',
     danger:
       'bg-red-600 hover:bg-red-700 text-white border border-red-600 shadow-subtle focus:ring-red-600',
     paypal:
@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
     ghost:
       'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 focus:ring-slate-400',
     outline:
-      'bg-transparent hover:bg-slate-50 text-slate-700 border border-slate-300 focus:ring-slate-400',
+      'bg-transparent hover:bg-blue-50/50 text-blue-700 border border-blue-300 focus:ring-blue-500',
   };
 
   return (
