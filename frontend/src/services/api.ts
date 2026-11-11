@@ -2,13 +2,29 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const resolveBaseUrl = (): string => {
   const raw = (import.meta.env.VITE_API_BASE_URL || '').trim();
-  if (!raw) return '/api/v1';
+  if (!raw) {
+    if (typeof window !== 'undefined' && window.location.hostname.endsWith('.onrender.com')) {
+      return 'https://agentpass-backend.onrender.com/api/v1';
+    }
+    return '/api/v1';
+  }
 
   let url = raw.replace(/\/+$/, '');
-  // Render Blueprint's `fromService.property: host` returns "<service>.onrender.com" without protocol
-  if (!url.startsWith('/') && !/^https?:\/\//i.test(url)) {
-    const isLocal = url.startsWith('localhost') || url.startsWith('127.0.0.1');
-    url = `${isLocal ? 'http' : 'https'}://${url}`;
+  if (!url.startsWith('/')) {
+    const hasScheme = /^https?:\/\//i.test(url);
+    const hostPart = (hasScheme ? url.replace(/^https?:\/\//i, '') : url).split('/')[0];
+    const isLocal = hostPart.startsWith('localhost') || hostPart.startsWith('127.0.0.1');
+
+    if (!hasScheme) {
+      url = `${isLocal ? 'http' : 'https'}://${url}`;
+    }
+
+    // Render Blueprint `fromService.property: host` injects the internal DNS name (e.g. "agentpass-backend" or "agentpass-backend:10000")
+    // without ".onrender.com", which is unreachable from browsers. Expand it to the public Render URL.
+    const bareHost = hostPart.split(':')[0];
+    if (!isLocal && !bareHost.includes('.')) {
+      url = `https://${bareHost}.onrender.com`;
+    }
   }
 
   return url.endsWith('/api/v1') ? url : `${url}/api/v1`;
