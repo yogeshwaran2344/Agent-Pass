@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
-  Flame,
   CheckCircle2,
   AlertTriangle,
 } from 'lucide-react';
@@ -52,7 +51,7 @@ export const SecurityCenterPage: React.FC = () => {
 
   const handleTriggerKillSwitch = async () => {
     if (killScope !== 'global' && !targetAgentId) {
-      setBanner({ type: 'error', text: 'Please select a target AI agent for scoped revocation.' });
+      setBanner({ type: 'error', text: 'Select a target AI agent for scoped revocation.' });
       return;
     }
 
@@ -66,7 +65,7 @@ export const SecurityCenterPage: React.FC = () => {
       });
       setBanner({
         type: 'success',
-        text: `EMERGENCY KILL SWITCH TRIGGERED (${killScope.toUpperCase()}). ${res.terminated_agents_count} agent(s) terminated.`,
+        text: `Kill switch triggered (${killScope.toUpperCase()}). ${res.terminated_agents_count} agent(s) terminated.`,
       });
       setIsModalOpen(false);
       await fetchSecurityData();
@@ -78,98 +77,82 @@ export const SecurityCenterPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-rose-400 text-xs font-bold uppercase tracking-wider mb-1">
-          <ShieldAlert className="w-4 h-4" />
-          <span>Active Defenses & Circuit Breakers</span>
-        </div>
-        <h2 className="text-xl font-bold text-white tracking-tight">Security Center & Emergency Kill Switch</h2>
-        <p className="text-xs text-slate-400">
-          Immediate zero-latency revocation of financial authorization across rogue agents, delegation sub-trees, or global platform.
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="pb-2 border-b border-slate-200">
+        <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Kill Switch &amp; Circuit Breakers</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Revoke financial permissions across individual agents, delegation sub-trees, or the entire platform.
         </p>
       </div>
 
       {banner && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
+          className={`p-3 rounded-md border text-xs flex items-center gap-2 ${
             banner.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-red-50 border-red-200 text-red-700'
           }`}
         >
           {banner.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
           ) : (
-            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
           )}
           <span>{banner.text}</span>
         </div>
       )}
 
-      {/* Main Red Alert Card: Emergency Kill Switch */}
-      <div className="p-8 rounded-2xl border-2 border-rose-500/50 bg-gradient-to-r from-rose-950/40 via-surface-card to-surface-card shadow-alert backdrop-blur-xl space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold">
-              <Flame className="w-4 h-4 text-rose-400" />
-              <span>CIRCUIT BREAKER CONTROL</span>
-            </div>
-            <h3 className="text-2xl font-black text-white tracking-tight">
-              Emergency Kill Switch
-            </h3>
-            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-              If an AI agent displays unexpected behavior, prompt injection compromise, or runaway loops, triggering the Kill Switch instantly invalidates its API tokens, freezes reserved budget commitments, and halts PayPal order creation.
+      <div className="p-6 rounded-lg border border-red-200 bg-white shadow-card space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <Badge variant="danger" dot>EMERGENCY CIRCUIT BREAKER</Badge>
+            <h2 className="text-lg font-semibold text-slate-900">Emergency Kill Switch</h2>
+            <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+              Immediately invalidates agent API credentials, halts active PayPal order creation, and freezes pending reservations.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="danger"
-              size="lg"
-              className="text-base font-bold shadow-2xl shadow-rose-600/50 hover:scale-105"
-              leftIcon={<ShieldAlert className="w-5 h-5" />}
-              onClick={() => setIsModalOpen(true)}
-            >
-              Trigger Kill Switch
-            </Button>
-          </div>
+          <Button
+            variant="danger"
+            size="lg"
+            leftIcon={<ShieldAlert className="w-4 h-4" />}
+            onClick={() => setIsModalOpen(true)}
+          >
+            Trigger Kill Switch
+          </Button>
         </div>
 
-        {/* Security Metrics Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-rose-500/20 text-xs">
-          <div className="p-3.5 rounded-xl bg-surface/70 border border-surface-border">
-            <span className="text-slate-400 block mb-1">Suspended Agents:</span>
-            <span className="text-lg font-bold text-amber-400 font-mono">
-              {status.suspended_agents_count} Agents
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100 text-xs">
+          <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
+            <span className="text-slate-500 block mb-1">Suspended Agents</span>
+            <span className="text-lg font-semibold text-amber-700 font-mono tabular-nums">
+              {status.suspended_agents_count}
             </span>
           </div>
-          <div className="p-3.5 rounded-xl bg-surface/70 border border-surface-border">
-            <span className="text-slate-400 block mb-1">Terminated via Kill Switch:</span>
-            <span className="text-lg font-bold text-rose-400 font-mono">
-              {status.revoked_agents_count} Agents
+          <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
+            <span className="text-slate-500 block mb-1">Kill-Switched Agents</span>
+            <span className="text-lg font-semibold text-red-700 font-mono tabular-nums">
+              {status.revoked_agents_count}
             </span>
           </div>
-          <div className="p-3.5 rounded-xl bg-surface/70 border border-surface-border">
-            <span className="text-slate-400 block mb-1">Pending Human Reviews:</span>
-            <span className="text-lg font-bold text-white font-mono">
-              {status.pending_approvals_count} Requests
+          <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
+            <span className="text-slate-500 block mb-1">Pending Reviews</span>
+            <span className="text-lg font-semibold text-slate-900 font-mono tabular-nums">
+              {status.pending_approvals_count}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Incident History & Security Logs */}
-      <Card title="Security Incidents & Circuit Breaker Events" subtitle="Live forensic audit trail of emergency and governance events">
-        <div className="space-y-3">
+      <Card title="Recent Security Events" subtitle="Audit history of emergency and status actions">
+        <div className="space-y-2.5">
           {auditEvents.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-500">
               No security or circuit breaker events logged yet.
             </div>
           ) : (
             auditEvents.map((ev) => (
-              <div key={ev.id} className="flex items-center justify-between p-3.5 rounded-xl bg-surface border border-surface-border text-xs gap-4">
+              <div key={ev.id} className="flex items-center justify-between p-3 rounded-md bg-slate-50 border border-slate-200 text-xs gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <Badge
                     variant={
@@ -182,9 +165,9 @@ export const SecurityCenterPage: React.FC = () => {
                   >
                     {ev.action}
                   </Badge>
-                  <span className="text-slate-200 truncate">{ev.description || ev.entity_id}</span>
+                  <span className="text-slate-700 truncate">{ev.description || ev.entity_id}</span>
                 </div>
-                <span className="text-slate-500 font-mono text-[11px] shrink-0">
+                <span className="text-slate-400 font-mono text-[11px] shrink-0">
                   {ev.created_at ? new Date(ev.created_at).toLocaleString() : 'Recent'}
                 </span>
               </div>
@@ -193,47 +176,42 @@ export const SecurityCenterPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Confirmation Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-surface-card border-2 border-rose-500/60 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
-              <ShieldAlert className="w-6 h-6 stroke-[2.5]" />
-            </div>
-
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-lg p-6 shadow-xl space-y-4">
             <div>
-              <h3 className="text-lg font-bold text-white">Confirm Emergency Kill Switch Execution</h3>
-              <p className="text-xs text-rose-300 mt-1">
-                This action is immediate. Active tokens will be revoked and pending commitments purged.
+              <h3 className="text-base font-semibold text-slate-900">Confirm Emergency Kill Switch</h3>
+              <p className="text-xs text-red-700 mt-1">
+                Active credentials for the selected scope will be revoked immediately.
               </p>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Revocation Scope</label>
+                <label className="block text-slate-700 font-medium mb-1">Revocation Scope</label>
                 <select
                   value={killScope}
                   onChange={(e: any) => setKillScope(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
                 >
-                  <option value="global">Global (Terminate All AI Agents)</option>
-                  <option value="delegation_tree">Delegation Tree (Target Agent & Downstream Children)</option>
-                  <option value="agent">Single Rogue Agent</option>
+                  <option value="global">Global (All Registered Agents)</option>
+                  <option value="delegation_tree">Delegation Tree (Parent &amp; Sub-Agents)</option>
+                  <option value="agent">Single Agent</option>
                 </select>
               </div>
 
               {killScope !== 'global' && (
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Target Agent</label>
+                  <label className="block text-slate-700 font-medium mb-1">Target Agent</label>
                   {agents.length === 0 ? (
-                    <div className="p-2 rounded bg-surface border border-surface-border text-slate-400">
+                    <div className="p-2 rounded bg-slate-50 border border-slate-200 text-slate-500">
                       No agents registered yet.
                     </div>
                   ) : (
                     <select
                       value={targetAgentId}
                       onChange={(e) => setTargetAgentId(e.target.value)}
-                      className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
                     >
                       {agents.map((a) => (
                         <option key={a.id} value={a.id}>
@@ -246,17 +224,17 @@ export const SecurityCenterPage: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Reason for Emergency Halt</label>
+                <label className="block text-slate-700 font-medium mb-1">Reason</label>
                 <textarea
                   rows={2}
                   value={killReason}
                   onChange={(e) => setKillReason(e.target.value)}
-                  className="w-full p-2.5 bg-surface border border-surface-border rounded-lg text-white font-mono text-xs"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-md text-slate-900 font-mono text-xs"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface-border">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </Button>
@@ -265,7 +243,7 @@ export const SecurityCenterPage: React.FC = () => {
                 isLoading={isTriggering}
                 onClick={handleTriggerKillSwitch}
               >
-                Execute Emergency Revocation
+                Execute Revocation
               </Button>
             </div>
           </div>

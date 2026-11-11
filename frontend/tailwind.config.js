@@ -7,25 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0B0F19',
+        background: '#F8FAFC',
         surface: {
-          DEFAULT: '#111827',
-          card: '#161F30',
-          hover: '#1E293B',
-          border: '#222F43',
+          DEFAULT: '#F1F5F9',
+          card: '#FFFFFF',
+          hover: '#F8FAFC',
+          border: '#E2E8F0',
         },
         brand: {
-          50: '#EEF2FF',
-          100: '#E0E7FF',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          400: '#3B82F6',
+          500: '#2563EB',
+          600: '#1D4ED8',
+          700: '#1E40AF',
         },
         intent: {
-          match: '#10B981',
-          drift: '#F59E0B',
-          conflict: '#EF4444',
+          match: '#059669',
+          drift: '#D97706',
+          conflict: '#DC2626',
         },
         paypal: {
           blue: '#0070BA',
@@ -34,12 +34,12 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 25px -5px rgba(99, 102, 241, 0.25)',
-        alert: '0 0 30px -5px rgba(239, 68, 68, 0.35)',
+        subtle: '0 1px 2px 0 rgba(15, 23, 42, 0.04)',
+        card: '0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03)',
       }
     },
   },

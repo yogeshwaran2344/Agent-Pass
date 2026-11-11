@@ -8,8 +8,8 @@ import {
   ArrowUpRight,
   BrainCircuit,
   ShieldAlert,
-  Sparkles,
   Loader2,
+  Play,
 } from 'lucide-react';
 import { StatCard } from '../components/common/StatCard';
 import { Card } from '../components/common/Card';
@@ -23,7 +23,6 @@ export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Live Intent simulation state
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [simulationError, setSimulationError] = useState<string | null>(null);
@@ -48,12 +47,11 @@ export const DashboardPage: React.FC = () => {
     setIsSimulating(true);
     setSimulationError(null);
     try {
-      // 1. Create or retrieve intent
       const intent = await intentService.createIntent({
-        raw_prompt: "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000.",
+        raw_prompt:
+          "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000.",
       });
 
-      // 2. Evaluate purchase proposal through backend Intent Engine
       const res = await intentService.evaluateIntent({
         intent_id: intent.id,
         agent_id: stats?.recent_transactions[0]?.agent_id || 'simulator_agent',
@@ -85,175 +83,160 @@ export const DashboardPage: React.FC = () => {
   if (isLoading && !stats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <p className="text-xs text-slate-400">Loading AGENTPASS live governance statistics...</p>
+        <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+        <p className="text-xs text-slate-500">Loading account metrics...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Hero Banner / Global Alert Status */}
-      <div className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900/80 to-surface-card p-6 shadow-2xl backdrop-blur-xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Connected to FastAPI Backend & Database</span>
-            </div>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight">
-              AGENTPASS Protection Gateway
-            </h2>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-              Continuously verifying whether your autonomous AI agents spend money for the{' '}
-              <span className="text-white font-semibold underline decoration-indigo-400">reasons you authorized</span>,
-              backed by deterministic velocity firewalls and PayPal Sandbox rails.
-            </p>
-          </div>
+    <div className="space-y-6 max-w-6xl mx-auto">
+      {/* Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Governance Overview</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Active agents, spend reservations, and intent checks across your PayPal Sandbox rail.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <Link to="/intents">
-              <Button variant="primary" leftIcon={<BrainCircuit className="w-4 h-4" />}>
-                Intent Console
-              </Button>
-            </Link>
-            <Link to="/security">
-              <Button variant="danger" leftIcon={<ShieldAlert className="w-4 h-4" />}>
-                Emergency Switch
-              </Button>
-            </Link>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <Link to="/intents">
+            <Button variant="secondary" size="sm" leftIcon={<BrainCircuit className="w-3.5 h-3.5" />}>
+              Intent Rules
+            </Button>
+          </Link>
+          <Link to="/security">
+            <Button variant="danger" size="sm" leftIcon={<ShieldAlert className="w-3.5 h-3.5" />}>
+              Kill Switch
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Primary KPI Metric Cards (Real backend data) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* KPI Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total AI Agents"
-          value={`${stats?.total_agents || 0} Registered`}
-          subtitle={`${stats?.active_agents || 0} active, ${stats?.suspended_agents || 0} suspended`}
+          title="Registered Agents"
+          value={stats?.total_agents || 0}
+          subtitle={`${stats?.active_agents || 0} active · ${stats?.suspended_agents || 0} suspended`}
           icon={Bot}
           accentColor="indigo"
         />
         <StatCard
           title="Pending Approvals"
-          value={`${stats?.pending_approvals_count || 0} Requests`}
-          subtitle="Human review required"
+          value={stats?.pending_approvals_count || 0}
+          subtitle="Awaiting operator decision"
           icon={CheckCircle2}
           accentColor="amber"
         />
         <StatCard
           title="Reserved Commitments"
           value={`$${(stats?.total_reserved_usd || 0).toFixed(2)}`}
-          subtitle="2-phase lock preventing double-spend"
+          subtitle="Active 2-phase holds"
           icon={Lock}
           accentColor="sky"
         />
         <StatCard
           title="Settled via PayPal"
           value={`$${(stats?.total_settled_usd || 0).toFixed(2)}`}
-          subtitle="Reconciled transactions"
+          subtitle="Captured sandbox volume"
           icon={CreditCard}
           accentColor="emerald"
         />
       </div>
 
-      {/* Featured Core Demonstration: Live Intent Consistency Engine Card */}
+      {/* Live Intent Verification Test */}
       <Card
-        title={
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="w-5 h-5 text-indigo-400" />
-            <span>Interactive Intent Engine Demonstration</span>
-          </div>
-        }
-        subtitle="Simulate an autonomous agent proposing a purchase against your master prompt"
+        title="Intent Conflict Check"
+        subtitle="Test whether a proposed checkout conflicts with the user's saved prompt"
         action={
           <Button
             size="sm"
             onClick={runIntentSimulation}
             isLoading={isSimulating}
-            leftIcon={<Sparkles className="w-4 h-4" />}
+            leftIcon={<Play className="w-3.5 h-3.5" />}
           >
-            Run Intent Mismatch Simulation
+            Run Check
           </Button>
         }
       >
         <div className="space-y-4">
-          <div className="p-4 rounded-xl bg-surface/80 border border-surface-border">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              User Master Prompt Registered
+          <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200">
+            <div className="text-[11px] font-medium text-slate-500 mb-1">
+              Master Instruction
             </div>
-            <div className="font-mono text-sm text-indigo-200 bg-indigo-950/40 p-3 rounded-lg border border-indigo-800/40">
-              "I need a laptop for college. Prioritize battery life and portability. Don't purchase gaming laptops. Budget under $1000."
+            <div className="font-mono text-xs text-slate-800">
+              &quot;I need a laptop for college. Prioritize battery life and portability. Don&apos;t purchase gaming laptops. Budget under $1000.&quot;
             </div>
           </div>
 
           {simulationError && (
-            <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{simulationError}</span>
             </div>
           )}
 
           {simulationResult && (
-            <div className="p-5 rounded-xl border border-rose-500/40 bg-rose-950/20 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center justify-between">
+            <div className="p-4 rounded-md border border-red-200 bg-red-50/50 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="conflict" dot>
-                    INTENT MISMATCH DETECTED ({simulationResult.decision})
+                    {simulationResult.decision}
                   </Badge>
-                  <span className="text-xs text-rose-300 font-medium">
-                    Within Budget, but Violates User Instruction
+                  <span className="text-xs text-red-700 font-medium">
+                    Within budget, blocked on negative constraint
                   </span>
                 </div>
-                <span className="text-sm font-bold text-white font-mono">$999.00 USD</span>
+                <span className="text-sm font-semibold text-slate-900 font-mono tabular-nums">
+                  $999.00 USD
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="p-3 rounded-lg bg-surface/60 border border-surface-border">
-                  <span className="text-slate-400 block mb-1">Agent Proposed Item:</span>
-                  <span className="font-semibold text-white text-sm">
-                    {simulationResult.proposedItem}
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-md bg-white border border-slate-200">
+                  <span className="text-slate-500 block mb-0.5 text-[11px]">Proposed Item</span>
+                  <span className="font-medium text-slate-900">{simulationResult.proposedItem}</span>
                 </div>
-                <div className="p-3 rounded-lg bg-surface/60 border border-surface-border">
-                  <span className="text-slate-400 block mb-1">Root Cause of Violation:</span>
-                  <span className="font-medium text-rose-400">
+                <div className="p-3 rounded-md bg-white border border-slate-200">
+                  <span className="text-slate-500 block mb-0.5 text-[11px]">Violation Reason</span>
+                  <span className="font-medium text-red-700">
                     {simulationResult.violations?.[0] || 'Negative constraint violated'}
                   </span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-surface/80 border border-surface-border text-xs text-slate-300 font-mono">
+              <div className="p-3 rounded-md bg-white border border-slate-200 text-xs text-slate-700 font-mono">
                 {simulationResult.reasoning}
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-rose-500/20">
-                <p className="text-xs text-slate-300">
-                  AGENTPASS halted automated checkout. Escalate to Context-Aware Human Approval?
+              <div className="flex items-center justify-between pt-2 border-t border-red-200">
+                <p className="text-xs text-slate-700">
+                  Checkout halted prior to PayPal order creation.
                 </p>
-                <div className="flex items-center gap-2">
-                  <Link to="/approvals">
-                    <Button size="sm" variant="paypal">
-                      Review in Approval Center
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/approvals">
+                  <Button size="sm" variant="secondary">
+                    Open Approval Queue
+                  </Button>
+                </Link>
               </div>
             </div>
           )}
         </div>
       </Card>
 
-      {/* Two Column Grid: Real Pending Human Approvals & Live System Activity */}
+      {/* Two Column Grid: Pending Approvals & Audit Events */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Approval Widget */}
         <Card
-          title="Context-Aware Human Approval"
-          subtitle="Transactions requiring operator authorization"
+          title="Pending Approvals"
+          subtitle="Flagged proposals awaiting review"
           action={
-            <Link to="/approvals" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
-              View All ({stats?.pending_approvals_count || 0}) <ArrowUpRight className="w-3.5 h-3.5" />
+            <Link
+              to="/approvals"
+              className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 font-medium"
+            >
+              View all ({stats?.pending_approvals_count || 0}) <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           }
         >
@@ -262,71 +245,68 @@ export const DashboardPage: React.FC = () => {
               stats.pending_approvals.map((req) => (
                 <div
                   key={req.id}
-                  className="p-4 rounded-xl border border-amber-500/30 bg-surface-hover/60 hover:border-amber-500/50 transition-colors"
+                  className="p-4 rounded-md border border-slate-200 bg-slate-50/50 space-y-2"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge variant="warning" dot>Pending Review</Badge>
-                      <span className="text-xs font-semibold text-slate-300 font-mono">{req.agent_id}</span>
+                      <Badge variant="warning" dot>Pending</Badge>
+                      <span className="text-xs font-mono text-slate-500">{req.agent_id}</span>
                     </div>
-                    <span className="text-sm font-bold text-white font-mono">${req.amount.toFixed(2)} USD</span>
+                    <span className="text-sm font-semibold text-slate-900 font-mono tabular-nums">
+                      ${req.amount.toFixed(2)}
+                    </span>
                   </div>
-
-                  <div className="text-sm font-medium text-white mb-1">
-                    {req.item_description}
-                  </div>
-
-                  <div className="text-xs text-slate-400 mb-3 line-clamp-2">
-                    {req.reason_for_approval}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-surface-border/60">
-                    <span className="text-[11px] text-slate-500">Merchant: {req.merchant_name} · PayPal Sandbox</span>
+                  <div className="text-sm font-medium text-slate-900">{req.item_description}</div>
+                  <div className="text-xs text-slate-600 line-clamp-2">{req.reason_for_approval}</div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className="text-[11px] text-slate-500">
+                      {req.merchant_name} · PayPal Sandbox
+                    </span>
                     <Link to="/approvals">
-                      <Button size="sm" variant="paypal">Review Request</Button>
+                      <Button size="sm" variant="paypal">Review</Button>
                     </Link>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-surface-border rounded-xl">
-                No pending approval requests. All transactions compliant.
+              <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-md">
+                No pending approval requests.
               </div>
             )}
           </div>
         </Card>
 
-        {/* Live Immutable Audit & Security Activity */}
         <Card
-          title="Live Security & Governance Feed"
-          subtitle="Deterministic policy rule evaluations"
+          title="Recent Audit Events"
+          subtitle="Latest recorded policy and settlement activity"
           action={
-            <Link to="/audit" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
-              Full Audit Trail <ArrowUpRight className="w-3.5 h-3.5" />
+            <Link
+              to="/audit"
+              className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 font-medium"
+            >
+              Full log <ArrowUpRight className="w-3.5 h-3.5" />
             </Link>
           }
         >
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {stats?.recent_audit_events && stats.recent_audit_events.length > 0 ? (
               stats.recent_audit_events.map((event) => (
                 <div
                   key={event.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-surface/50 border border-surface-border/50 text-xs"
+                  className="flex items-start gap-3 p-3 rounded-md bg-slate-50 border border-slate-200 text-xs"
                 >
-                  <div className="mt-0.5">
-                    <Badge variant="purple">{event.action}</Badge>
-                  </div>
+                  <Badge variant="neutral">{event.action}</Badge>
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-200 truncate">{event.description || event.action}</p>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <p className="text-slate-800 truncate">{event.description || event.action}</p>
+                    <span className="text-[10px] text-slate-400 font-mono">
                       {event.created_at ? new Date(event.created_at).toLocaleTimeString() : 'Recent'}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-surface-border rounded-xl">
-                No security audit logs recorded yet.
+              <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-md">
+                No audit events recorded yet.
               </div>
             )}
           </div>

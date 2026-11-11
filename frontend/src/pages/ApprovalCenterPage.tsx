@@ -6,8 +6,6 @@ import {
   HelpCircle,
   AlertTriangle,
   Check,
-  Clock,
-  Zap,
   Loader2,
   ExternalLink,
 } from 'lucide-react';
@@ -24,7 +22,6 @@ export const ApprovalCenterPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // PayPal Live Checkout Pending Approval state
   const [pendingPayPalCheckout, setPendingPayPalCheckout] = useState<{
     orderId: string;
     approveUrl: string;
@@ -32,7 +29,6 @@ export const ApprovalCenterPage: React.FC = () => {
     merchant: string;
   } | null>(null);
 
-  // PayPal Payment Modal / Success state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccessData, setPaymentSuccessData] = useState<any>(null);
 
@@ -52,7 +48,6 @@ export const ApprovalCenterPage: React.FC = () => {
     fetchApprovals();
   }, []);
 
-  // Auto-capture if user returns from PayPal Sandbox Checkout (?token=<ORDER_ID>)
   useEffect(() => {
     const returnedOrderId = searchParams.get('token');
     if (returnedOrderId) {
@@ -110,10 +105,8 @@ export const ApprovalCenterPage: React.FC = () => {
     try {
       if (action === 'approve') {
         setIsProcessingPayment(true);
-        // Step 1: Record human approval in backend
         await approvalService.takeAction(approval.id, 'approve', 'Approved manual override by operator.');
 
-        // Step 2: Create transaction authorized with this human approval ID
         const txRes = await transactionService.createTransaction({
           agent_id: approval.agent_id,
           approval_id: approval.id,
@@ -123,13 +116,10 @@ export const ApprovalCenterPage: React.FC = () => {
           idempotency_key: `appr_${approval.id}`,
         });
 
-        // Step 3: Create PayPal order on Sandbox REST API via backend
         const returnUrl = `${window.location.origin}/approvals`;
         const cancelUrl = `${window.location.origin}/approvals`;
         const ppOrder = await paypalService.createOrder(txRes.id, returnUrl, cancelUrl);
 
-        // Step 4: If live PayPal Sandbox returned an approval URL, prompt buyer checkout;
-        // otherwise (mock sandbox mode) capture immediately!
         if (ppOrder.approve_url) {
           setPendingPayPalCheckout({
             orderId: ppOrder.paypal_order_id,
@@ -151,11 +141,11 @@ export const ApprovalCenterPage: React.FC = () => {
         await approvalService.takeAction(
           approval.id,
           action,
-          `Action ${action} initiated by human operator.`
+          `Action ${action} initiated by operator.`
         );
         setBanner({
           type: 'success',
-          text: `Request marked as ${action}. Autonomous agent notified.`,
+          text: `Request marked as ${action}.`,
         });
       }
       await fetchApprovals();
@@ -167,67 +157,61 @@ export const ApprovalCenterPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
-          <Clock className="w-4 h-4" />
-          <span>Human-in-the-Loop Governance</span>
-        </div>
-        <h2 className="text-xl font-bold text-white tracking-tight">Context-Aware Approval Center</h2>
-        <p className="text-xs text-slate-400">
-          Decisions requiring human intervention explain the root instruction, detected conflict diff, and allow direct settlement via PayPal Sandbox.
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="pb-2 border-b border-slate-200">
+        <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Approval Queue</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Review flagged transactions, inspect constraint diffs, and authorize PayPal Sandbox captures.
         </p>
       </div>
 
       {banner && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
+          className={`p-3 rounded-md border text-xs flex items-center gap-2 ${
             banner.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-red-50 border-red-200 text-red-700'
           }`}
         >
           {banner.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
           ) : (
-            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
           )}
           <span>{banner.text}</span>
         </div>
       )}
 
-      {/* Live PayPal Sandbox Buyer Checkout Modal */}
       {pendingPayPalCheckout && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-surface-card border border-amber-500/40 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="text-center">
-              <Badge variant="warning" dot>LIVE PAYPAL SANDBOX ORDER CREATED</Badge>
-              <h3 className="text-lg font-bold text-white mt-3">Complete PayPal Sandbox Checkout</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Order <span className="font-mono text-indigo-300">{pendingPayPalCheckout.orderId}</span> requires Sandbox Buyer approval before funds can be captured.
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-lg p-6 shadow-xl space-y-4">
+            <div>
+              <Badge variant="warning" dot>PAYPAL CHECKOUT PENDING</Badge>
+              <h3 className="text-base font-semibold text-slate-900 mt-3">Complete PayPal Sandbox Checkout</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Order <span className="font-mono text-slate-800">{pendingPayPalCheckout.orderId}</span> requires Sandbox Buyer approval before capture.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-surface border border-surface-border text-xs space-y-2 font-mono">
+            <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 text-xs space-y-2 font-mono">
               <div className="flex justify-between">
-                <span className="text-slate-400">Merchant:</span>
-                <span className="text-white font-bold">{pendingPayPalCheckout.merchant}</span>
+                <span className="text-slate-500">Merchant</span>
+                <span className="text-slate-900 font-semibold">{pendingPayPalCheckout.merchant}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Amount:</span>
-                <span className="text-amber-400 font-bold">${pendingPayPalCheckout.amount.toFixed(2)} USD</span>
+                <span className="text-slate-500">Amount</span>
+                <span className="text-slate-900 font-semibold tabular-nums">${pendingPayPalCheckout.amount.toFixed(2)} USD</span>
               </div>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <a
                 href={pendingPayPalCheckout.approveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#0070ba] hover:bg-[#005ea6] text-white text-xs font-bold transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-[#0070ba] hover:bg-[#005ea6] text-white text-xs font-semibold transition-colors"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-3.5 h-3.5" />
                 <span>1. Open PayPal Sandbox Checkout</span>
               </a>
               <Button
@@ -236,7 +220,7 @@ export const ApprovalCenterPage: React.FC = () => {
                 isLoading={isProcessingPayment}
                 onClick={handleCapturePendingOrder}
               >
-                2. Capture & Settle Approved Order
+                2. Capture &amp; Settle Approved Order
               </Button>
               <Button
                 variant="ghost"
@@ -250,99 +234,94 @@ export const ApprovalCenterPage: React.FC = () => {
         </div>
       )}
 
-      {/* Payment Success Modal */}
       {paymentSuccessData && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-surface-card border border-emerald-500/40 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
-              <Check className="w-6 h-6 stroke-[3]" />
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-lg p-6 shadow-xl space-y-4">
+            <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto text-emerald-600">
+              <Check className="w-5 h-5" />
             </div>
 
             <div className="text-center">
-              <h3 className="text-lg font-bold text-white">Payment Successfully Settled!</h3>
-              <p className="text-xs text-slate-400 mt-1">PayPal Sandbox Order captured & ledger reconciled</p>
+              <h3 className="text-base font-semibold text-slate-900">Payment Settled</h3>
+              <p className="text-xs text-slate-500 mt-1">PayPal Sandbox capture confirmed and reconciled</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-surface border border-surface-border text-xs space-y-2 font-mono">
+            <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 text-xs space-y-2 font-mono">
               <div className="flex justify-between">
-                <span className="text-slate-400">Merchant:</span>
-                <span className="text-white font-bold">{paymentSuccessData.merchant}</span>
+                <span className="text-slate-500">Merchant</span>
+                <span className="text-slate-900 font-semibold">{paymentSuccessData.merchant}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Amount Settled:</span>
-                <span className="text-emerald-400 font-bold">
+                <span className="text-slate-500">Amount</span>
+                <span className="text-emerald-700 font-semibold tabular-nums">
                   {paymentSuccessData.amount ? `$${paymentSuccessData.amount.toFixed(2)} USD` : 'Confirmed'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">PayPal Order ID:</span>
-                <span className="text-indigo-300 truncate max-w-[180px]">{paymentSuccessData.orderId}</span>
+                <span className="text-slate-500">Order ID</span>
+                <span className="text-slate-800 truncate max-w-[180px]">{paymentSuccessData.orderId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Capture ID:</span>
-                <span className="text-indigo-300 truncate max-w-[180px]">{paymentSuccessData.captureId}</span>
+                <span className="text-slate-500">Capture ID</span>
+                <span className="text-slate-800 truncate max-w-[180px]">{paymentSuccessData.captureId}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-surface-border">
-                <span className="text-slate-400">Status:</span>
-                <span className="text-emerald-400 font-bold">{paymentSuccessData.status}</span>
+              <div className="flex justify-between pt-2 border-t border-slate-200">
+                <span className="text-slate-500">Status</span>
+                <span className="text-emerald-700 font-semibold">{paymentSuccessData.status}</span>
               </div>
             </div>
 
             <Button variant="primary" className="w-full" onClick={() => setPaymentSuccessData(null)}>
-              Close & Return to Approvals
+              Done
             </Button>
           </div>
         </div>
       )}
 
-      {/* Loading */}
       {isLoading && approvals.length === 0 ? (
-        <div className="py-20 flex flex-col items-center justify-center space-y-2">
-          <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-          <p className="text-xs text-slate-400">Checking pending approval requests in backend...</p>
+        <div className="py-16 flex flex-col items-center justify-center space-y-2">
+          <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+          <p className="text-xs text-slate-500">Loading pending approval requests...</p>
         </div>
       ) : (
-        /* Approvals List */
         <div className="space-y-4">
           {approvals.map((req) => (
-            <Card key={req.id} className="border-amber-500/30 bg-surface-card/90">
+            <Card key={req.id}>
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-surface-border/60 gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-100 gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="warning" dot>
-                        INTENT DIVERGENCE DETECTED
-                      </Badge>
-                      <span className="text-xs text-slate-400 font-mono">ID: {req.id}</span>
+                      <Badge variant="warning" dot>REVIEW REQUIRED</Badge>
+                      <span className="text-xs text-slate-400 font-mono">{req.id}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mt-1">{req.item_description}</h3>
-                    <div className="text-xs text-slate-400 mt-0.5">
-                      Merchant: <span className="text-slate-200 font-medium">{req.merchant_name}</span> · Agent: <span className="text-indigo-300 font-mono">{req.agent_id}</span>
+                    <h3 className="text-base font-semibold text-slate-900 mt-1">{req.item_description}</h3>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      Merchant: <span className="text-slate-800 font-medium">{req.merchant_name}</span> · Agent: <span className="font-mono text-slate-700">{req.agent_id}</span>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="text-2xl font-extrabold text-white font-mono">${req.amount.toFixed(2)}</div>
-                    <span className="text-xs text-amber-400 font-medium">Requires Operator Override</span>
+                  <div className="sm:text-right">
+                    <div className="text-xl font-semibold text-slate-900 font-mono tabular-nums">${req.amount.toFixed(2)}</div>
+                    <span className="text-[11px] text-amber-700 font-medium">Awaiting operator sign-off</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-3.5 rounded-xl bg-surface/80 border border-surface-border space-y-1.5">
-                    <span className="font-semibold text-slate-300 block">Explanation of Conflict:</span>
-                    <p className="text-slate-300 leading-relaxed">{req.reason_for_approval}</p>
+                  <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-1">
+                    <span className="font-medium text-slate-700 block">Conflict Summary</span>
+                    <p className="text-slate-600 leading-relaxed">{req.reason_for_approval}</p>
                     {req.intent_divergence_summary && (
-                      <p className="text-indigo-300 font-mono text-[11px] mt-1 pt-1 border-t border-surface-border">
+                      <p className="text-slate-700 font-mono text-[11px] mt-1.5 pt-1.5 border-t border-slate-200">
                         {req.intent_divergence_summary}
                       </p>
                     )}
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-surface/80 border border-surface-border space-y-1.5">
-                    <span className="font-semibold text-slate-300 block">Triggered Policy Violations:</span>
+                  <div className="p-3.5 rounded-md bg-slate-50 border border-slate-200 space-y-1.5">
+                    <span className="font-medium text-slate-700 block">Policy Violations</span>
                     <ul className="space-y-1">
                       {req.policy_conflicts?.map((p, i) => (
-                        <li key={i} className="flex items-center gap-1.5 text-rose-400">
+                        <li key={i} className="flex items-center gap-1.5 text-red-700">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                           <span>{p}</span>
                         </li>
@@ -352,36 +331,35 @@ export const ApprovalCenterPage: React.FC = () => {
                 </div>
 
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="text-xs text-slate-400 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-400" />
-                    <span>Approving will authorize payment via PayPal Sandbox rails.</span>
-                  </div>
+                  <span className="text-xs text-slate-500">
+                    Approving dispatches payment authorization to PayPal Sandbox.
+                  </span>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     <Button
                       size="sm"
                       variant="ghost"
-                      leftIcon={<HelpCircle className="w-4 h-4" />}
+                      leftIcon={<HelpCircle className="w-3.5 h-3.5" />}
                       onClick={() => handleAction(req, 'clarify')}
                     >
-                      Request Clarification
+                      Clarify
                     </Button>
                     <Button
                       size="sm"
                       variant="secondary"
-                      leftIcon={<XCircle className="w-4 h-4" />}
+                      leftIcon={<XCircle className="w-3.5 h-3.5" />}
                       onClick={() => handleAction(req, 'reject')}
                     >
-                      Reject Proposal
+                      Reject
                     </Button>
                     <Button
                       size="sm"
                       variant="paypal"
-                      leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                      leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
                       isLoading={isProcessingPayment}
                       onClick={() => handleAction(req, 'approve')}
                     >
-                      Approve & Settle via PayPal
+                      Approve &amp; Pay via PayPal
                     </Button>
                   </div>
                 </div>
@@ -390,11 +368,11 @@ export const ApprovalCenterPage: React.FC = () => {
           ))}
 
           {approvals.length === 0 && (
-            <div className="text-center py-16 p-8 border border-surface-border rounded-2xl bg-surface-card/40">
-              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-white">No Pending Approvals</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                All agent proposals are currently within intent bounds and budget thresholds.
+            <div className="text-center py-14 p-8 border border-slate-200 rounded-lg bg-white shadow-subtle">
+              <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+              <h3 className="text-sm font-semibold text-slate-900">No pending approvals</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                All agent proposals are within policy limits and intent constraints.
               </p>
             </div>
           )}

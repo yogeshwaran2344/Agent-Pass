@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  LineChart as LineChartIcon,
   BarChart3,
   TrendingUp,
   ShieldCheck,
@@ -18,21 +17,17 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Legend,
 } from 'recharts';
 import { Card } from '../components/common/Card';
 import { StatCard } from '../components/common/StatCard';
 import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
-import { dashboardService, transactionService, riskService } from '../services';
-import { RiskEvaluationResult, Transaction } from '../types';
+import { dashboardService, riskService } from '../services';
+import { RiskEvaluationResult } from '../types';
 
 export const AnalyticsPage: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Risk Simulator State
   const [testAmount, setTestAmount] = useState('450.00');
   const [testMerchant, setTestMerchant] = useState('BestBuy');
   const [testVelocity, setTestVelocity] = useState('2');
@@ -42,16 +37,10 @@ export const AnalyticsPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsData, txData] = await Promise.all([
-          dashboardService.getStats(),
-          transactionService.listTransactions(),
-        ]);
+        const statsData = await dashboardService.getStats();
         setStats(statsData);
-        setTransactions(txData);
       } catch (err) {
         console.error('Failed to load analytics', err);
-      } finally {
-        setIsLoading(false);
       }
     };
     fetchData();
@@ -74,7 +63,6 @@ export const AnalyticsPage: React.FC = () => {
     }
   };
 
-  // Mocked/Derived chart dataset
   const velocityData = [
     { date: 'Mon', settled: 120, reserved: 200 },
     { date: 'Tue', settled: 310, reserved: 450 },
@@ -86,196 +74,182 @@ export const AnalyticsPage: React.FC = () => {
   ];
 
   const policyEnforcementData = [
-    { category: 'Autonomous Approved', count: 42 },
-    { category: 'Intent Conflict Blocked', count: 14 },
-    { category: 'Budget Limit Blocked', count: 9 },
-    { category: 'Human Review Approved', count: 18 },
+    { category: 'Approved', count: 42 },
+    { category: 'Intent Conflict', count: 14 },
+    { category: 'Limit Blocked', count: 9 },
+    { category: 'Human Review', count: 18 },
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
-          <LineChartIcon className="w-4 h-4" />
-          <span>Intelligence Reports</span>
-        </div>
-        <h2 className="text-xl font-bold text-white tracking-tight">Spending & Risk Analytics</h2>
-        <p className="text-xs text-slate-400">
-          Monitor velocity trends, policy enforcement distributions, and real-time risk scores.
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="pb-2 border-b border-slate-200">
+        <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Spend &amp; Risk Analytics</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Velocity patterns, policy block rates, and heuristic transaction risk scoring.
         </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Intent Match Rate"
           value="95.4%"
-          subtitle="Proposals strictly aligned with master user prompt"
+          subtitle="Proposals matching stored user instructions"
           icon={ShieldCheck}
           accentColor="emerald"
         />
         <StatCard
-          title="Human Approval Latency"
+          title="Mean Review Time"
           value="1.8 min"
-          subtitle="Average review turnaround time"
+          subtitle="Operator approval turnaround"
           icon={TrendingUp}
           accentColor="indigo"
         />
         <StatCard
-          title="Total Settled Spend"
-          value={`$${stats?.spending?.total_spend_today?.toFixed(2) || '0.00'}`}
-          subtitle={`Across ${stats?.spending?.active_agents_spending_today || 0} active agents`}
+          title="Settled Today"
+          value={`$${stats?.total_settled_usd?.toFixed(2) || '0.00'}`}
+          subtitle={`${stats?.active_agents || 0} active agents`}
           icon={BarChart3}
           accentColor="amber"
         />
       </div>
 
-      {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Spending Velocity Area Chart */}
         <Card
-          title="Autonomous Spending Velocity"
-          subtitle="Settled transactions vs 2-phase reserved commitments"
+          title="Spending Velocity"
+          subtitle="Settled PayPal captures vs. 2-phase reservations"
         >
-          <div className="h-72 w-full pt-4">
+          <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={velocityData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={velocityData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSettled" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorReserved" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="date" stroke="#64748b" textAnchor="end" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#64748b" tick={{ fontSize: 11 }} unit="$" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="date" stroke="#64748B" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#64748B" tick={{ fontSize: 11 }} unit="$" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    borderRadius: '8px',
+                    backgroundColor: '#FFFFFF',
+                    borderColor: '#E2E8F0',
+                    borderRadius: '6px',
                     fontSize: '12px',
+                    color: '#0F172A',
                   }}
                 />
                 <Area
                   type="monotone"
                   dataKey="settled"
-                  stroke="#10b981"
+                  stroke="#059669"
+                  strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorSettled)"
-                  name="Settled Spend"
+                  name="Settled"
                 />
                 <Area
                   type="monotone"
                   dataKey="reserved"
-                  stroke="#6366f1"
+                  stroke="#2563EB"
+                  strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorReserved)"
-                  name="Reserved (2-Phase)"
+                  name="Reserved"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        {/* Policy Enforcement Bar Chart */}
         <Card
-          title="Enforcement & Interception Breakdown"
-          subtitle="Deterministic policy interceptions vs semantic intent divergence"
+          title="Enforcement Breakdown"
+          subtitle="Deterministic rule checks vs. intent interceptions"
         >
-          <div className="h-72 w-full pt-4">
+          <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={policyEnforcementData}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="category" stroke="#64748b" tick={{ fontSize: 10 }} />
-                <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="category" stroke="#64748B" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#64748B" tick={{ fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    borderRadius: '8px',
+                    backgroundColor: '#FFFFFF',
+                    borderColor: '#E2E8F0',
+                    borderRadius: '6px',
                     fontSize: '12px',
+                    color: '#0F172A',
                   }}
                 />
-                <Bar dataKey="count" fill="#38bdf8" radius={[4, 4, 0, 0]} name="Interceptions" />
+                <Bar dataKey="count" fill="#0F172A" radius={[4, 4, 0, 0]} name="Events" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
       </div>
 
-      {/* Live Risk Scoring Engine Simulator */}
       <Card
-        title="Live Risk Engine & Fraud Scoring Simulator"
-        subtitle="Simulate real-time multi-signal scoring before authorizing agent transactions"
+        title="Risk Score Simulator"
+        subtitle="Test real-time multi-signal risk scoring before authorizing transactions"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="space-y-4">
+          <div className="space-y-3.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Transaction Amount ($)
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Amount ($ USD)
               </label>
               <input
                 type="number"
                 step="0.01"
                 value={testAmount}
                 onChange={(e) => setTestAmount(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs font-mono"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs font-mono"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Merchant</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Merchant</label>
               <input
                 type="text"
                 value={testMerchant}
                 onChange={(e) => setTestMerchant(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 1-Hour Velocity Count
               </label>
               <input
                 type="number"
                 value={testVelocity}
                 onChange={(e) => setTestVelocity(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs font-mono"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs font-mono"
               />
             </div>
             <Button
               onClick={handleRunRiskEvaluation}
               disabled={isEvaluatingRisk}
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full"
+              leftIcon={isEvaluatingRisk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
             >
-              {isEvaluatingRisk ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Evaluating Signals...</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4" />
-                  <span>Evaluate Risk Score</span>
-                </>
-              )}
+              {isEvaluatingRisk ? 'Evaluating...' : 'Evaluate Risk Score'}
             </Button>
           </div>
 
-          <div className="md:col-span-2 p-5 rounded-xl border border-surface-border bg-surface/50 min-h-[220px] flex flex-col justify-center">
+          <div className="md:col-span-2 p-5 rounded-md border border-slate-200 bg-slate-50 min-h-[210px] flex flex-col justify-center">
             {riskResult ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400 font-mono">Calculated Risk Score:</span>
-                    <span className="text-2xl font-bold font-mono text-white">
+                    <span className="text-xs text-slate-500">Risk Score:</span>
+                    <span className="text-2xl font-semibold font-mono text-slate-900 tabular-nums">
                       {(riskResult.overall_risk_score * 100).toFixed(0)}%
                     </span>
                   </div>
@@ -293,19 +267,19 @@ export const AnalyticsPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="text-xs font-semibold text-slate-300">Triggered Rules:</span>
+                  <span className="text-xs font-medium text-slate-700">Triggered Signals</span>
                   {riskResult.triggered_rules.length === 0 ? (
-                    <div className="text-xs text-emerald-400 font-mono">
-                      No anomalous risk rules triggered. Normal behavioral pattern.
+                    <div className="text-xs text-emerald-700 font-mono">
+                      No anomalous signals detected.
                     </div>
                   ) : (
                     <div className="space-y-1">
                       {riskResult.triggered_rules.map((rule, idx) => (
                         <div
                           key={idx}
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-mono flex items-center gap-2"
+                          className="px-2.5 py-1.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs font-mono flex items-center gap-2"
                         >
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0" />
                           <span>{rule}</span>
                         </div>
                       ))}
@@ -313,13 +287,13 @@ export const AnalyticsPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="p-3 rounded-lg bg-surface border border-surface-border text-xs text-slate-400">
+                <div className="p-3 rounded-md bg-white border border-slate-200 text-xs text-slate-600">
                   {riskResult.explanation}
                 </div>
               </div>
             ) : (
               <div className="text-center text-xs text-slate-500">
-                Configure amounts and velocity above, then click <strong>Evaluate Risk Score</strong> to run live heuristic risk calculation.
+                Enter an amount and hourly velocity, then click <strong>Evaluate Risk Score</strong>.
               </div>
             )}
           </div>

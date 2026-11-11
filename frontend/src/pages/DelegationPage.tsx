@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  GitFork,
   ArrowDown,
   Bot,
   Plus,
@@ -8,7 +7,6 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
-  Clock,
   Layers,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
@@ -25,7 +23,6 @@ export const DelegationPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [parentAgentId, setParentAgentId] = useState('');
   const [childAgentId, setChildAgentId] = useState('');
@@ -67,7 +64,7 @@ export const DelegationPage: React.FC = () => {
   const handleCreateDelegation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!parentAgentId || !childAgentId) {
-      setModalError('Please select both parent and child agents.');
+      setModalError('Select both parent and child agents.');
       return;
     }
     if (parentAgentId === childAgentId) {
@@ -97,117 +94,110 @@ export const DelegationPage: React.FC = () => {
   };
 
   const handleRevoke = async (delegationId: string) => {
-    if (!confirm('Are you sure you want to revoke this delegation authority? The child agent will immediately lose delegated spending rights.')) {
+    if (!confirm('Revoke this delegation? The child agent will immediately lose delegated spending access.')) {
       return;
     }
     try {
       await delegationService.revokeDelegation(delegationId);
       await loadData();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     }
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
-            <GitFork className="w-4 h-4" />
-            <span>Multi-Agent RBAC Hierarchy</span>
-          </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Delegation Chain Management</h2>
-          <p className="text-xs text-slate-400">
-            Enforce authority subsets: Child delegated agents cannot exceed parent budget limits or bypass category constraints.
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Delegations</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Enforce subset limits across multi-agent hierarchies with cycle detection and instant revocation.
           </p>
         </div>
         <Button
+          size="sm"
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 self-start"
+          leftIcon={<Plus className="w-4 h-4" />}
         >
-          <Plus className="w-4 h-4" />
-          <span>Delegate Authority</span>
+          Delegate Authority
         </Button>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+        <div className="p-3.5 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Visual Hierarchy Tree */}
       <Card
-        title="Live Agent Delegation Tree"
-        subtitle="Cryptographically verified hierarchy: Root Authority ──> Parent Agent ──> Delegated Sub-Agents"
+        title="Delegation Hierarchy"
+        subtitle="Parent-to-child authorization graph (max depth 5)"
       >
         {isLoading ? (
-          <div className="py-12 flex justify-center items-center text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />
-            <span>Loading delegation network...</span>
+          <div className="py-12 flex justify-center items-center text-slate-500 text-xs">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+            <span>Loading delegation tree...</span>
           </div>
         ) : delegations.length === 0 ? (
           <div className="py-10 text-center">
-            <div className="w-12 h-12 rounded-full bg-surface border border-surface-border flex items-center justify-center text-slate-400 mx-auto mb-3">
-              <Layers className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 mx-auto mb-3">
+              <Layers className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-semibold text-white">No active delegations established</h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-              Delegate authority from a primary agent to a specialized sub-agent (e.g. price researcher, checkout worker).
+            <h4 className="text-sm font-semibold text-slate-900">No active delegations</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Delegate scoped budget subsets from a primary agent to specialized worker agents.
             </p>
             <Button
               size="sm"
               onClick={() => setIsModalOpen(true)}
               className="mt-4"
             >
-              Establish First Delegation
+              Create Delegation
             </Button>
           </div>
         ) : (
-          <div className="py-6 flex flex-col items-center space-y-4 max-w-2xl mx-auto">
-            {/* Level 0: Master Authority */}
-            <div className="w-full p-4 rounded-xl border border-indigo-500/40 bg-indigo-950/30 flex items-center justify-between">
+          <div className="py-4 flex flex-col items-center space-y-3 max-w-2xl mx-auto">
+            <div className="w-full p-3.5 rounded-md border border-slate-300 bg-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold">
-                  H
+                <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center text-white text-xs font-bold">
+                  R
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">Master User Authority</div>
-                  <div className="text-xs text-slate-400 font-mono">
-                    Deterministic root limits & master intent rules
+                  <div className="text-sm font-semibold text-slate-900">Root Operator Policy</div>
+                  <div className="text-xs text-slate-500 font-mono">
+                    Master intent &amp; spending bounds
                   </div>
                 </div>
               </div>
-              <Badge variant="purple">Root Authority</Badge>
+              <Badge variant="neutral">Root</Badge>
             </div>
 
-            <ArrowDown className="w-5 h-5 text-indigo-400 animate-bounce" />
+            <ArrowDown className="w-4 h-4 text-slate-400" />
 
-            {/* Render Delegations */}
             {delegations.map((del) => (
               <React.Fragment key={del.id}>
-                <div className="w-full p-4 rounded-xl border border-surface-border bg-surface-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="w-full p-4 rounded-md border border-slate-200 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-surface border border-surface-border flex items-center justify-center text-sky-400 mt-0.5">
-                      <Bot className="w-6 h-6" />
+                    <div className="w-8 h-8 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 mt-0.5">
+                      <Bot className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">
+                      <div className="flex items-center gap-1.5 text-sm font-semibold">
+                        <span className="text-slate-900">
                           {del.parent_agent_name || del.parent_agent_id.slice(0, 8)}
                         </span>
-                        <span className="text-xs text-slate-500">──►</span>
-                        <span className="text-sm font-bold text-sky-400">
+                        <span className="text-slate-400">&rarr;</span>
+                        <span className="text-blue-700">
                           {del.child_agent_name || del.child_agent_id.slice(0, 8)}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-400 mt-0.5 font-mono">
+                      <div className="text-xs text-slate-500 mt-0.5 font-mono tabular-nums">
                         Ceiling: ${del.delegated_budget_limit.toFixed(2)} · Depth {del.delegation_depth}
                       </div>
                       {del.task_description && (
-                        <div className="text-xs text-slate-300 mt-1 italic">
-                          "{del.task_description}"
+                        <div className="text-xs text-slate-600 mt-1">
+                          {del.task_description}
                         </div>
                       )}
                       {del.allowed_categories && del.allowed_categories.length > 0 && (
@@ -215,7 +205,7 @@ export const DelegationPage: React.FC = () => {
                           {del.allowed_categories.map((cat, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-surface-border"
+                              className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-mono"
                             >
                               {cat}
                             </span>
@@ -232,86 +222,91 @@ export const DelegationPage: React.FC = () => {
                     {del.is_active && (
                       <Button
                         size="sm"
-                        variant="danger"
+                        variant="secondary"
                         onClick={() => handleRevoke(del.id)}
-                        className="px-2.5 py-1 text-xs"
+                        className="text-red-700 hover:text-red-800"
+                        leftIcon={<Trash2 className="w-3.5 h-3.5" />}
                       >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />
                         Revoke
                       </Button>
                     )}
                   </div>
                 </div>
-                <ArrowDown className="w-4 h-4 text-slate-600" />
+                <ArrowDown className="w-4 h-4 text-slate-300" />
               </React.Fragment>
             ))}
 
-            <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
-              Invariance enforced: Sub-agents automatically inherit all parent negative constraints
+            <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-mono pt-1">
+              <Shield className="w-3.5 h-3.5 text-emerald-600" />
+              Child allocations cannot exceed parent daily ceilings
             </div>
           </div>
         )}
       </Card>
 
-      {/* Delegation History Table */}
-      <Card title="Delegation Authority Records" subtitle="Full audit list of granted and revoked authority delegations">
+      <Card title="Delegation Records" subtitle="Granted and revoked delegation links">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-surface border-b border-surface-border text-slate-400 uppercase font-mono text-[10px]">
+            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-mono text-[10px]">
               <tr>
-                <th className="px-4 py-3">Delegation ID</th>
-                <th className="px-4 py-3">Parent Agent</th>
-                <th className="px-4 py-3">Child Agent</th>
-                <th className="px-4 py-3">Ceiling</th>
-                <th className="px-4 py-3">Depth</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Created</th>
-                <th className="px-4 py-3 text-right">Action</th>
+                <th className="px-4 py-2.5">ID</th>
+                <th className="px-4 py-2.5">Parent</th>
+                <th className="px-4 py-2.5">Child</th>
+                <th className="px-4 py-2.5">Ceiling</th>
+                <th className="px-4 py-2.5">Depth</th>
+                <th className="px-4 py-2.5">Status</th>
+                <th className="px-4 py-2.5">Created</th>
+                <th className="px-4 py-2.5 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-surface-border">
+            <tbody className="divide-y divide-slate-100">
               {delegations.map((del) => (
-                <tr key={del.id} className="hover:bg-surface/50">
-                  <td className="px-4 py-3 font-mono text-slate-400">{del.id.slice(0, 8)}...</td>
-                  <td className="px-4 py-3 font-semibold text-white">
+                <tr key={del.id} className="hover:bg-slate-50/70">
+                  <td className="px-4 py-3 font-mono text-slate-500">{del.id.slice(0, 8)}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">
                     {del.parent_agent_name || del.parent_agent_id.slice(0, 8)}
                   </td>
-                  <td className="px-4 py-3 font-semibold text-sky-400">
+                  <td className="px-4 py-3 font-medium text-blue-700">
                     {del.child_agent_name || del.child_agent_id.slice(0, 8)}
                   </td>
-                  <td className="px-4 py-3 font-mono text-emerald-400">
+                  <td className="px-4 py-3 font-mono text-slate-900 tabular-nums">
                     ${del.delegated_budget_limit.toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 font-mono text-slate-300">Level {del.delegation_depth}</td>
+                  <td className="px-4 py-3 font-mono text-slate-600">Level {del.delegation_depth}</td>
                   <td className="px-4 py-3">
                     <Badge variant={del.is_active ? 'success' : 'danger'}>
                       {del.is_active ? 'Active' : 'Revoked'}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-slate-400">
+                  <td className="px-4 py-3 text-slate-500">
                     {new Date(del.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {del.is_active ? (
                       <button
                         onClick={() => handleRevoke(del.id)}
-                        className="text-rose-400 hover:text-rose-300 font-medium"
+                        className="text-red-600 hover:text-red-800 font-medium"
                       >
                         Revoke
                       </button>
                     ) : (
-                      <span className="text-slate-500 italic">Terminated</span>
+                      <span className="text-slate-400">Revoked</span>
                     )}
                   </td>
                 </tr>
               ))}
+              {delegations.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                    No delegation records yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </Card>
 
-      {/* Modal: Delegate Authority */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -319,19 +314,19 @@ export const DelegationPage: React.FC = () => {
       >
         <form onSubmit={handleCreateDelegation} className="space-y-4">
           {modalError && (
-            <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+            <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs">
               {modalError}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Parent Agent (Grantor)
             </label>
             <select
               value={parentAgentId}
               onChange={(e) => setParentAgentId(e.target.value)}
-              className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs"
               required
             >
               {agents.map((a) => (
@@ -343,67 +338,67 @@ export const DelegationPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Child Agent (Recipient)
             </label>
             <select
               value={childAgentId}
               onChange={(e) => setChildAgentId(e.target.value)}
-              className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs"
               required
             >
               {agents.map((a) => (
                 <option key={a.id} value={a.id} disabled={a.id === parentAgentId}>
-                  {a.name} {a.id === parentAgentId ? '(Cannot self-delegate)' : ''}
+                  {a.name} {a.id === parentAgentId ? '(Same agent)' : ''}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Task Description & Purpose
+            <label className="block text-xs font-medium text-slate-700 mb-1">
+              Task Description
             </label>
             <input
               type="text"
               placeholder="e.g. Price comparison across verified vendors"
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
-              className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Delegated Budget Limit ($)
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Budget Ceiling ($)
               </label>
               <input
                 type="number"
                 step="0.01"
                 value={budgetLimit}
                 onChange={(e) => setBudgetLimit(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs font-mono"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs font-mono"
                 required
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Expiry (Hours)
               </label>
               <input
                 type="number"
                 value={expiryHours}
                 onChange={(e) => setExpiryHours(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs font-mono"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs font-mono"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Allowed Categories (Comma separated)
             </label>
             <input
@@ -411,12 +406,12 @@ export const DelegationPage: React.FC = () => {
               value={allowedCategories}
               onChange={(e) => setAllowedCategories(e.target.value)}
               placeholder="Electronics, Computers, Office"
-              className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-xs"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-xs"
             />
           </div>
 
-          <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[11px] leading-relaxed">
-            <strong>Policy Invariance Guarantee:</strong> If the parent agent is suspended or revoked, all delegated child authorities are immediately invalidated.
+          <div className="p-3 rounded-md bg-slate-50 border border-slate-200 text-slate-600 text-[11px] leading-relaxed">
+            <strong>Invariance:</strong> Suspending or revoking a parent agent automatically invalidates delegated child authorities.
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
@@ -428,7 +423,7 @@ export const DelegationPage: React.FC = () => {
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Granting Authority...' : 'Confirm Delegation'}
+              {isSubmitting ? 'Granting...' : 'Confirm Delegation'}
             </Button>
           </div>
         </form>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Plus, Key, Shield, ShieldAlert, CheckCircle, RefreshCw, Sparkles, Copy, Check, Loader2 } from 'lucide-react';
+import { Bot, Plus, Copy, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Agent } from '../types';
 import { agentService } from '../services';
+import { getErrorMessage } from '../services/api';
 
 export const AgentsPage: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -12,8 +13,8 @@ export const AgentsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyGenerated, setNewKeyGenerated] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
-  // Form states
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [framework, setFramework] = useState('crewai');
@@ -25,7 +26,7 @@ export const AgentsPage: React.FC = () => {
       const data = await agentService.listAgents();
       setAgents(data);
     } catch (err) {
-      console.error('Failed to fetch agent list from backend', err);
+      console.error('Failed to fetch agent list', err);
     } finally {
       setIsLoading(false);
     }
@@ -37,6 +38,7 @@ export const AgentsPage: React.FC = () => {
 
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorBanner(null);
     try {
       const res = await agentService.registerAgent({
         name,
@@ -49,65 +51,74 @@ export const AgentsPage: React.FC = () => {
         ],
       });
       setNewKeyGenerated(res.api_key);
+      setName('');
+      setDescription('');
       fetchAgents();
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to create agent');
+    } catch (err) {
+      setErrorBanner(getErrorMessage(err));
     }
   };
 
   const handleToggleStatus = async (agent: Agent) => {
     const nextStatus = agent.status === 'active' ? 'suspended' : 'active';
-    const reason = nextStatus === 'suspended' ? 'Suspended by operator via console' : 'Reactivated';
+    const reason = nextStatus === 'suspended' ? 'Suspended by operator' : 'Reactivated by operator';
+    setErrorBanner(null);
     try {
       await agentService.changeStatus(agent.id, nextStatus, reason);
       fetchAgents();
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to update status');
+    } catch (err) {
+      setErrorBanner(getErrorMessage(err));
     }
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">AI Agent Registry</h2>
-          <p className="text-xs text-slate-400">
-            Register and monitor autonomous buyer agents, issue scoped API keys, and enforce status boundaries.
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Agent Registry</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Register autonomous agents, issue scoped `agp_live_` API keys, and manage status.
           </p>
         </div>
         <Button
           variant="primary"
+          size="sm"
           leftIcon={<Plus className="w-4 h-4" />}
           onClick={() => {
             setNewKeyGenerated(null);
+            setErrorBanner(null);
             setIsModalOpen(true);
           }}
         >
-          Register New Agent
+          Register Agent
         </Button>
       </div>
 
-      {/* Loading state */}
+      {errorBanner && (
+        <div className="p-3 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{errorBanner}</span>
+        </div>
+      )}
+
       {isLoading && agents.length === 0 ? (
-        <div className="py-20 flex flex-col items-center justify-center space-y-2">
-          <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-          <p className="text-xs text-slate-400">Retrieving registered AI agents from database...</p>
+        <div className="py-16 flex flex-col items-center justify-center space-y-2">
+          <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+          <p className="text-xs text-slate-500">Loading registered agents...</p>
         </div>
       ) : (
-        /* Agents Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {agents.map((agent) => (
-            <Card key={agent.id} className="relative flex flex-col justify-between">
+            <Card key={agent.id} className="flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                      <Bot className="w-5 h-5" />
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 rounded-md bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                      <Bot className="w-4 h-4" />
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white">{agent.name}</h3>
-                      <span className="text-[10px] font-mono text-slate-500">{agent.id}</span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-slate-900 truncate">{agent.name}</h3>
+                      <span className="text-[11px] font-mono text-slate-400 block truncate">{agent.id}</span>
                     </div>
                   </div>
                   <Badge
@@ -118,30 +129,28 @@ export const AgentsPage: React.FC = () => {
                   </Badge>
                 </div>
 
-                <p className="text-xs text-slate-400 mb-4 line-clamp-2">
+                <p className="text-xs text-slate-600 mb-3 line-clamp-2">
                   {agent.description || 'No description provided.'}
                 </p>
 
-                {/* Framework & Model Badges */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[10px] font-semibold bg-surface px-2 py-0.5 rounded border border-surface-border text-slate-300">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <span className="text-[11px] font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
                     {agent.framework}
                   </span>
-                  <span className="text-[10px] font-semibold bg-surface px-2 py-0.5 rounded border border-surface-border text-slate-300">
+                  <span className="text-[11px] font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
                     {agent.model_name}
                   </span>
                 </div>
 
-                {/* Capabilities */}
                 <div className="mb-4">
-                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Declared Capabilities
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block mb-1">
+                    Capabilities
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1">
                     {agent.capabilities?.map((cap, i) => (
                       <span
                         key={i}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-950/40 text-indigo-300 border border-indigo-800/40 font-mono"
+                        className="text-[11px] px-2 py-0.5 rounded bg-slate-50 text-slate-700 border border-slate-200 font-mono"
                       >
                         {cap.capability_name}
                       </span>
@@ -149,24 +158,24 @@ export const AgentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Reputation & Trust Tier */}
                 {agent.reputation && (
-                  <div className="p-3 rounded-lg bg-surface/80 border border-surface-border/60 flex items-center justify-between text-xs mb-4">
+                  <div className="p-2.5 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-between text-xs mb-4">
                     <div>
-                      <span className="text-slate-400 text-[11px] block">Trust Tier</span>
-                      <span className="font-semibold text-emerald-400">{agent.reputation.trust_tier}</span>
+                      <span className="text-slate-500 text-[11px] block">Trust Tier</span>
+                      <span className="font-medium text-emerald-700">{agent.reputation.trust_tier}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-slate-400 text-[11px] block">Reliability Score</span>
-                      <span className="font-bold text-white font-mono">{agent.reputation.reputation_score}%</span>
+                      <span className="text-slate-500 text-[11px] block">Reliability</span>
+                      <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                        {agent.reputation.reputation_score}%
+                      </span>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="pt-3 border-t border-surface-border/60 flex items-center justify-between">
-                <span className="text-[11px] text-slate-500 font-mono">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[11px] text-slate-500 font-mono tabular-nums">
                   Tasks: {agent.reputation?.total_tasks_attempted || 0}
                 </span>
                 <Button
@@ -174,20 +183,20 @@ export const AgentsPage: React.FC = () => {
                   variant={agent.status === 'active' ? 'secondary' : 'primary'}
                   onClick={() => handleToggleStatus(agent)}
                 >
-                  {agent.status === 'active' ? 'Suspend Agent' : 'Reactivate'}
+                  {agent.status === 'active' ? 'Suspend' : 'Reactivate'}
                 </Button>
               </div>
             </Card>
           ))}
 
           {agents.length === 0 && (
-            <div className="col-span-full py-16 text-center p-8 border border-surface-border rounded-2xl bg-surface-card/40">
-              <Bot className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-white">No Registered AI Agents</h3>
-              <p className="text-xs text-slate-400 mt-1 mb-4">
-                Register your first agent to issue API keys and enforce spending boundaries.
+            <div className="col-span-full py-14 text-center p-8 border border-slate-200 rounded-lg bg-white shadow-subtle">
+              <Bot className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <h3 className="text-sm font-semibold text-slate-900">No agents registered</h3>
+              <p className="text-xs text-slate-500 mt-1 mb-4">
+                Register an agent to issue API credentials and configure spending policies.
               </p>
-              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+              <Button variant="primary" size="sm" onClick={() => setIsModalOpen(true)}>
                 Register First Agent
               </Button>
             </div>
@@ -195,20 +204,19 @@ export const AgentsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Register Agent Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface-card border border-surface-border w-full max-w-lg rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-white mb-1">Register New AI Agent</h3>
-            <p className="text-xs text-slate-400 mb-5">
-              Issue cryptographic authorization credentials and establish an autonomous buyer.
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-lg p-6 shadow-xl">
+            <h3 className="text-base font-semibold text-slate-900 mb-0.5">Register AI Agent</h3>
+            <p className="text-xs text-slate-500 mb-5">
+              Issue a scoped `agp_live_` credential for autonomous execution.
             </p>
 
             {newKeyGenerated ? (
               <div className="space-y-4">
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
-                  <div className="font-bold mb-1">Agent Successfully Registered!</div>
-                  Copy this API key now. It will not be shown again.
+                <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs">
+                  <div className="font-semibold mb-0.5">Agent registered</div>
+                  Copy this API key now. For security, it cannot be displayed again.
                 </div>
 
                 <div className="relative">
@@ -216,23 +224,24 @@ export const AgentsPage: React.FC = () => {
                     type="text"
                     readOnly
                     value={newKeyGenerated}
-                    className="w-full font-mono text-xs px-3 py-2.5 bg-black/60 border border-surface-border rounded-lg text-emerald-400 pr-10"
+                    className="w-full font-mono text-xs px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-md text-slate-900 pr-10"
                   />
                   <button
+                    type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(newKeyGenerated);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
-                    className="absolute right-2 top-2 p-1 text-slate-400 hover:text-white"
+                    className="absolute right-2 top-2 p-1 text-slate-500 hover:text-slate-900"
                   >
-                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
 
                 <Button
                   variant="primary"
-                  className="w-full mt-4"
+                  className="w-full"
                   onClick={() => {
                     setIsModalOpen(false);
                     setNewKeyGenerated(null);
@@ -244,48 +253,48 @@ export const AgentsPage: React.FC = () => {
             ) : (
               <form onSubmit={handleCreateAgent} className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Agent Name</label>
+                  <label className="block text-slate-700 font-medium mb-1">Agent Name</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. FlightBooker-Delta"
-                    className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-sm"
+                    placeholder="e.g. ProcurementBot-Alpha"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">Description & Purpose</label>
+                  <label className="block text-slate-700 font-medium mb-1">Description</label>
                   <textarea
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe what this agent is authorized to purchase..."
-                    className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white text-sm"
+                    placeholder="Purpose and authorized workflows..."
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900 text-sm"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">Framework</label>
+                    <label className="block text-slate-700 font-medium mb-1">Framework</label>
                     <select
                       value={framework}
                       onChange={(e) => setFramework(e.target.value)}
-                      className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
                     >
                       <option value="crewai">CrewAI</option>
                       <option value="langchain">LangChain / LangGraph</option>
                       <option value="autogen">AutoGen</option>
-                      <option value="custom">Custom Agent SDK</option>
+                      <option value="custom">Custom SDK</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">AI Model</label>
+                    <label className="block text-slate-700 font-medium mb-1">Model</label>
                     <select
                       value={modelName}
                       onChange={(e) => setModelName(e.target.value)}
-                      className="w-full px-3 py-2 bg-surface border border-surface-border rounded-lg text-white"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-slate-900"
                     >
                       <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                       <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
@@ -295,12 +304,12 @@ export const AgentsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-4">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                   <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
                     Cancel
                   </Button>
                   <Button type="submit" variant="primary">
-                    Create & Generate Key
+                    Create &amp; Issue Key
                   </Button>
                 </div>
               </form>

@@ -4,32 +4,31 @@
 
 @layer base {
   body {
-    @apply bg-[#0B0F19] text-slate-100 font-sans antialiased min-h-screen overflow-x-hidden;
+    @apply bg-[#F8FAFC] text-slate-900 font-sans antialiased min-h-screen overflow-x-hidden;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  input, select, textarea {
+    @apply focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 outline-none transition-colors;
   }
 }
 
-/* Custom scrollbars */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle institutional scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: #F8FAFC;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
-  border-radius: 4px;
+  background: #CBD5E1;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
-}
-
-/* Gradient card borders */
-.card-border {
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.card-gradient {
-  background: linear-gradient(180deg, rgba(22, 31, 48, 0.85) 0%, rgba(17, 24, 39, 0.95) 100%);
-  backdrop-filter: blur(12px);
+  background: #94A3B8;
 }
